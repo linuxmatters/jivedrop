@@ -28,6 +28,9 @@ install: build
 mp3: build
     @echo n | ./jivedrop testdata/0.md testdata/LMP0.flac testdata/
 
+vhs: build
+    @vhs ./jivedrop.tape
+
 # Run tests
 test:
     go test ./...

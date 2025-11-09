@@ -43,50 +43,20 @@ Your podcast deserves proper packaging. Jivedrop transforms mixed audio (WAV/FLA
 
 ### Example Output
 
-```
-Jivedrop 🪩 v0.1.0
-
-Episode: 67 - Mirrors, Motors and Makefiles
-Input:   /path/to/LMP67.wav (PCM 48kHz stereo)
-Output:  LMP67.mp3
-
-Encoding to MP3...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
-
-Specs:   CBR 112kbps, 44.1kHz mono
-Quality: -q 3, lowpass 20.5kHz
-Encoded: 3249.6s (54:09) in 42.3s (76.8x realtime)
-
-Embedding ID3v2 tags...
-  Title:   67: Mirrors, Motors and Makefiles
-  Album:   Linux Matters
-  Track:   67
-  Artist:  Linux Matters
-  Date:    2025
-  Comment: https://linuxmatters.sh/
-  Cover:   3000x3000 PNG (482KB)
-
-✓ Complete: LMP67.mp3
-
-Podcast frontmatter:
-  podcast_duration: 54:09
-  podcast_bytes: 27357184
-```
+<div align="center"><img alt="Jivedrop Demo" src=".github/jivedrop.gif" width="600" /></div>
 
 ## Hugo Workflow Integration
 
 Jivedrop automatically:
 - Reads episode title from `episode.md`
-- Locates cover art at from frontmatter.`
-- Outputs frontmatter-ready values for your episode markdown
-
-Drop the `podcast_duration` and `podcast_bytes` values straight into your Hugo frontmatter.
+- Locates cover art at from frontmatter
+- Outputs frontmatter-ready values for `podcast_duration` and `podcast_bytes` and will prompt to automatically update your Hugo frontmatter
 
 ## Build
 
 ```bash
 just build      # Build binary
-just test       # Encode test audio
+just mp3        # Encode test audio
 
 # Manual
 go build -o jivedrop ./cmd/jivedrop
