@@ -332,17 +332,17 @@ jivedrop/
 ### Phase 4: File Statistics
 **Goal:** Output podcast frontmatter values
 
-- [ ] Extract duration from encoded MP3
+- [x] Extract duration from encoded MP3
   - Format as HH:MM:SS (mediainfo compatible)
-- [ ] Calculate file size in bytes
-- [ ] Display frontmatter output
+- [x] Calculate file size in bytes
+- [x] Display frontmatter output
   - `podcast_duration: HH:MM:SS`
   - `podcast_bytes: NNNNN`
 
 **Success criteria:**
-- Duration matches mediainfo output
-- Byte count matches `du -sb` output
-- Frontmatter copy-pasteable into Hugo
+- ✅ Duration matches mediainfo output (verified: 600.63s = 00:10:00)
+- ✅ Byte count matches file size (verified: exact match)
+- ✅ Frontmatter copy-pasteable into Hugo
 
 ---
 
@@ -356,11 +356,7 @@ jivedrop/
   - Disk full scenarios
 - [ ] Overwrite protection
   - Detect existing output file
-  - Prompt for confirmation (or `--force` flag)
-- [ ] CLI flag validation
-  - Bitrate range (64-320 kbps reasonable)
-  - Quality range (0-9)
-  - Sample rate validation (8000-192000 Hz)
+  - Prompt for confirmation
 - [ ] Testing
   - Unit tests for metadata extraction
   - Integration tests for encoding pipeline

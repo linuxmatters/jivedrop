@@ -197,4 +197,15 @@ func main() {
 	}
 
 	cli.PrintSuccess(fmt.Sprintf("Complete: %s", outputPath))
+
+	// Extract file statistics for podcast frontmatter
+	stats, err := encoder.GetFileStats(outputPath)
+	if err != nil {
+		cli.PrintWarning(fmt.Sprintf("Could not extract file statistics: %v", err))
+	} else {
+		// Display podcast frontmatter values
+		fmt.Println("\nPodcast frontmatter:")
+		cli.PrintInfo(fmt.Sprintf("  podcast_duration: %s", stats.DurationString))
+		cli.PrintInfo(fmt.Sprintf("  podcast_bytes: %d", stats.FileSizeBytes))
+	}
 }
