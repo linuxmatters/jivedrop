@@ -30,4 +30,4 @@ test:
 
 # Get project orientation info
 onboard:
-  @cat README.md | grep -A 20 "^## The Groove"
+  @cat docs/SPECIFICATION.md | grep -A 20 "^## Onboard"
