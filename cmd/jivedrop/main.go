@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/alecthomas/kong"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/linuxmatters/jivedrop/internal/cli"
 	"github.com/linuxmatters/jivedrop/internal/encoder"
 	"github.com/linuxmatters/jivedrop/internal/id3"
+	"github.com/linuxmatters/jivedrop/internal/ui"
 )
 
 // version is set via ldflags at build time
@@ -151,32 +152,34 @@ func main() {
 	}
 	cli.PrintInfo(fmt.Sprintf("Input: %s %dHz %s", format, sampleRate, channelMode))
 
-	// Start encoding with progress callback
-	fmt.Println("\nEncoding to MP3...")
-	startTime := time.Now()
+	// Determine output bitrate and mode
+	outputBitrate := 112
+	outputMode := "mono"
+	if CLI.Stereo {
+		outputBitrate = 192
+		outputMode = "stereo"
+	}
 
-	lastProgress := 0
-	err = enc.Encode(func(samplesProcessed, totalSamples int64) {
-		if totalSamples > 0 {
-			progress := int((samplesProcessed * 100) / totalSamples)
-			// Only print every 5% to avoid flooding output
-			if progress >= lastProgress+5 || progress == 100 {
-				fmt.Printf("  Progress: %d%%\r", progress)
-				lastProgress = progress
-			}
-		}
-	})
+	// Start encoding with Bubbletea UI
+	fmt.Println()
+	encodeModel := ui.NewEncodeModel(enc, outputMode, outputBitrate)
 
+	p := tea.NewProgram(encodeModel)
+	finalModel, err := p.Run()
 	if err != nil {
-		cli.PrintError(fmt.Sprintf("Encoding failed: %v", err))
-		// Clean up partial output file
-		os.Remove(outputPath)
+		cli.PrintError(fmt.Sprintf("UI error: %v", err))
 		os.Exit(1)
 	}
 
-	elapsed := time.Since(startTime)
-	fmt.Printf("\n")
-	cli.PrintSuccess(fmt.Sprintf("Encoded in %.1fs", elapsed.Seconds()))
+	// Check for encoding errors
+	if encModel, ok := finalModel.(*ui.EncodeModel); ok {
+		if encModel.Error() != nil {
+			cli.PrintError(fmt.Sprintf("Encoding failed: %v", encModel.Error()))
+			// Clean up partial output file
+			os.Remove(outputPath)
+			os.Exit(1)
+		}
+	}
 
 	// Write ID3v2 tags
 	fmt.Println("\nEmbedding ID3v2 tags...")

@@ -299,14 +299,14 @@ jivedrop/
 ### Phase 3: Bubbletea UI
 **Goal:** Professional progress indication
 
-- [ ] Encoding progress model
+- [x] Encoding progress model
   - Percentage complete
   - Time elapsed / remaining
-  - Real-time bitrate
+  - Real-time speed (encoding speed vs realtime)
   - Audio specs display
-- [ ] Tag embedding spinner
-- [ ] Success/error states
-- [ ] Styled output matching Jivefire aesthetic
+- [x] Success/error states
+- [x] Styled output matching Jivefire aesthetic
+- [ ] Tag embedding spinner (deferred - tags embed instantly)
 
 **UI mockup:**
 ```
@@ -323,9 +323,9 @@ jivedrop/
 ```
 
 **Success criteria:**
-- Smooth progress updates (no flicker)
-- Accurate time estimation
-- Clean UI rendering
+- ✅ Smooth progress updates (no flicker)
+- ✅ Accurate time estimation
+- ✅ Clean UI rendering
 
 ---
 
