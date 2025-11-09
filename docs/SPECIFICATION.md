@@ -242,7 +242,7 @@ jivedrop/
 - [x] Kong CLI argument parsing
 - [x] Styled help output (Lipgloss)
 - [x] Version flag
-- [ ] Input validation (file exists, episode markdown exists and has required front matter)
+- [ ] Input validation (file exists, episode markdown exists)
 
 **Success criteria:**
 - ✅ `jivedrop --help` shows styled help
@@ -275,14 +275,14 @@ jivedrop/
 **Goal:** Hugo workflow integration and ID3 tags
 
 - [ ] Hugo markdown parser
-  - Extract episode title from `content/episode/{num}.md`
+  - Extract episode title, number, date and path to `episode_image` from the frontmatter in the episode markdown.
   - Validate episode file exists
 - [ ] ID3v2 tag writing
   - TIT2 (title): `{num}: {title}`
   - TALB (album): `Linux Matters`
   - TRCK (track): `{num}`
   - TPE1 (artist): `Linux Matters`
-  - TDRC (date): current year
+  - TDRC (date): year and month
   - COMM (comment): website URL
 - [ ] Cover art embedding (APIC frame)
 
@@ -463,8 +463,8 @@ Frame: TPE1 (Lead artist)
   Value: "Linux Matters"
 
 Frame: TDRC (Recording date)
-  Value: "{current_year}"
-  Example: "2025"
+  Value: "{year}-{month}"
+  Example: "2025-11"
 
 Frame: COMM (Comment)
   Language: "eng"
