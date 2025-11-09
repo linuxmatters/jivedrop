@@ -12,6 +12,11 @@ build:
     echo "Building jivedrop version: $VERSION"
     CGO_ENABLED=1 go build -ldflags="-X main.version=$VERSION" -o jivedrop ./cmd/jivedrop
 
+# Clean build artifacts
+clean:
+    rm -fv jivedrop 2>/dev/null || true
+    @rm testdata/*.mp3 2>/dev/null || true
+
 # Install the jivedrop binary to ~/.local/bin
 install: build
     @mkdir -p ~/.local/bin 2>/dev/null || true
@@ -19,10 +24,9 @@ install: build
     @echo "Installed jivedrop to ~/.local/bin/jivedrop"
     @echo "Make sure ~/.local/bin is in your PATH"
 
-# Clean build artifacts
-clean:
-    rm -fv jivedrop 2>/dev/null || true
-    @rm testdata/*.mp3 2>/dev/null || true
+# Run MP3 encodinging test
+mp3: build
+    @echo n | ./jivedrop testdata/0.md testdata/LMP0.flac testdata/
 
 # Run tests
 test:
