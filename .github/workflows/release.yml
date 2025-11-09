@@ -114,7 +114,7 @@ jobs:
           cat jivedrop-${{ matrix.os }}-${{ matrix.arch }}.sha256
 
       - name: Create Release and Upload Assets
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         if: matrix.os == 'linux' && matrix.arch == 'amd64'  # Only create release once
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -129,7 +129,7 @@ jobs:
             *.sha256
 
       - name: Upload Assets (non-Linux builds)
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         if: matrix.os != 'linux' || matrix.arch != 'amd64'  # Upload to existing release for other builds
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
