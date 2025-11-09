@@ -3,9 +3,12 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/linuxmatters/jivedrop/internal/cli"
+	"github.com/linuxmatters/jivedrop/internal/encoder"
 )
 
 // version is set via ldflags at build time
@@ -93,4 +96,67 @@ func main() {
 	if CLI.Cover != "" {
 		cli.PrintInfo(fmt.Sprintf("Custom cover art: %s", CLI.Cover))
 	}
+
+	// Determine output path
+	outputDir := CLI.OutputDir
+	if outputDir == "" {
+		outputDir = "."
+	}
+	outputPath := filepath.Join(outputDir, "output.mp3") // TODO: Use episode number for filename
+
+	// Create encoder
+	enc, err := encoder.New(encoder.Config{
+		InputPath:  CLI.InputFile,
+		OutputPath: outputPath,
+		Stereo:     CLI.Stereo,
+	})
+	if err != nil {
+		cli.PrintError(fmt.Sprintf("Failed to create encoder: %v", err))
+		os.Exit(1)
+	}
+	defer enc.Close()
+
+	// Initialize encoder
+	if err := enc.Initialize(); err != nil {
+		cli.PrintError(fmt.Sprintf("Failed to initialize encoder: %v", err))
+		os.Exit(1)
+	}
+
+	// Get input info
+	sampleRate, channels, format := enc.GetInputInfo()
+	channelMode := "mono"
+	if channels == 2 {
+		channelMode = "stereo"
+	} else if channels > 2 {
+		channelMode = fmt.Sprintf("%dch", channels)
+	}
+	cli.PrintInfo(fmt.Sprintf("Input: %s %dHz %s", format, sampleRate, channelMode))
+
+	// Start encoding with progress callback
+	fmt.Println("\nEncoding to MP3...")
+	startTime := time.Now()
+
+	lastProgress := 0
+	err = enc.Encode(func(samplesProcessed, totalSamples int64) {
+		if totalSamples > 0 {
+			progress := int((samplesProcessed * 100) / totalSamples)
+			// Only print every 5% to avoid flooding output
+			if progress >= lastProgress+5 || progress == 100 {
+				fmt.Printf("  Progress: %d%%\r", progress)
+				lastProgress = progress
+			}
+		}
+	})
+
+	if err != nil {
+		cli.PrintError(fmt.Sprintf("Encoding failed: %v", err))
+		// Clean up partial output file
+		os.Remove(outputPath)
+		os.Exit(1)
+	}
+
+	elapsed := time.Since(startTime)
+	fmt.Printf("\n")
+	cli.PrintSuccess(fmt.Sprintf("Encoded in %.1fs", elapsed.Seconds()))
+	cli.PrintSuccess(fmt.Sprintf("Output: %s", outputPath))
 }

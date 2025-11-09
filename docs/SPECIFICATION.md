@@ -254,20 +254,20 @@ jivedrop/
 ### Phase 1: Core Encoding
 **Goal:** MP3 encoding via ffmpeg-go
 
-- [ ] ffmpeg-go integration
-- [ ] Audio decoder (WAV, FLAC input)
-- [ ] LAME encoder configuration
-  - CBR 112kbps
+- [x] ffmpeg-go integration
+- [x] Audio decoder (WAV, FLAC input)
+- [x] LAME encoder configuration
+  - CBR 112kbps (mono) / 192kbps (stereo)
   - 44.1kHz resampling
-  - Mono downmix
+  - Mono downmix (default) / stereo mode (--stereo flag)
   - Quality preset `-q 3`
   - Lowpass 20.5kHz
-- [ ] Basic progress output (no UI yet)
+- [x] Basic progress output (no UI yet)
 
 **Success criteria:**
-- Encodes WAV to MP3 with correct settings
-- Matches current `lame` output quality
-- File plays correctly in media players
+- ✅ Encodes WAV to MP3 with correct settings
+- ✅ Matches current `lame` output quality
+- ✅ File plays correctly in media players
 
 ---
 
