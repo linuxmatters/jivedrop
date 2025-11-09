@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/alecthomas/kong"
 	tea "github.com/charmbracelet/bubbletea"
@@ -207,5 +208,50 @@ func main() {
 		fmt.Println("\nPodcast frontmatter:")
 		cli.PrintInfo(fmt.Sprintf("  podcast_duration: %s", stats.DurationString))
 		cli.PrintInfo(fmt.Sprintf("  podcast_bytes: %d", stats.FileSizeBytes))
+
+		// Check if values differ from existing frontmatter
+		needsUpdate := false
+		if metadata.PodcastDuration != "" && metadata.PodcastDuration != stats.DurationString {
+			cli.PrintWarning(fmt.Sprintf("Duration mismatch: frontmatter has %s, calculated %s",
+				metadata.PodcastDuration, stats.DurationString))
+			needsUpdate = true
+		}
+		if metadata.PodcastBytes > 0 && metadata.PodcastBytes != stats.FileSizeBytes {
+			cli.PrintWarning(fmt.Sprintf("File size mismatch: frontmatter has %d, calculated %d",
+				metadata.PodcastBytes, stats.FileSizeBytes))
+			needsUpdate = true
+		}
+
+		// Prompt user to update frontmatter if values differ
+		if needsUpdate {
+			fmt.Print("\nUpdate frontmatter with new values? [y/N]: ")
+			var response string
+			fmt.Scanln(&response)
+
+			if strings.ToLower(strings.TrimSpace(response)) == "y" {
+				if err := encoder.UpdateFrontmatter(CLI.EpisodeMD, stats.DurationString, stats.FileSizeBytes); err != nil {
+					cli.PrintError(fmt.Sprintf("Failed to update frontmatter: %v", err))
+				} else {
+					cli.PrintSuccess("Frontmatter updated successfully")
+				}
+			} else {
+				cli.PrintInfo("Frontmatter not updated")
+			}
+		} else if metadata.PodcastDuration == "" || metadata.PodcastBytes == 0 {
+			// If frontmatter is missing these fields, offer to add them
+			fmt.Print("\nAdd podcast_duration and podcast_bytes to frontmatter? [y/N]: ")
+			var response string
+			fmt.Scanln(&response)
+
+			if strings.ToLower(strings.TrimSpace(response)) == "y" {
+				if err := encoder.UpdateFrontmatter(CLI.EpisodeMD, stats.DurationString, stats.FileSizeBytes); err != nil {
+					cli.PrintError(fmt.Sprintf("Failed to update frontmatter: %v", err))
+				} else {
+					cli.PrintSuccess("Frontmatter updated successfully")
+				}
+			} else {
+				cli.PrintInfo("Frontmatter not updated")
+			}
+		}
 	}
 }

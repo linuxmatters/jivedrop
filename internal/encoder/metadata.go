@@ -12,10 +12,12 @@ import (
 
 // EpisodeMetadata holds parsed episode information from Hugo frontmatter
 type EpisodeMetadata struct {
-	Episode      string    `yaml:"episode"`
-	Title        string    `yaml:"title"`
-	Date         time.Time `yaml:"Date"`
-	EpisodeImage string    `yaml:"episode_image"`
+	Episode         string    `yaml:"episode"`
+	Title           string    `yaml:"title"`
+	Date            time.Time `yaml:"Date"`
+	EpisodeImage    string    `yaml:"episode_image"`
+	PodcastDuration string    `yaml:"podcast_duration"`
+	PodcastBytes    int64     `yaml:"podcast_bytes"`
 }
 
 // ParseEpisodeMetadata extracts metadata from a Hugo markdown file
@@ -150,4 +152,79 @@ func findProjectRoot(startPath string) (string, error) {
 // FormatDateForID3 formats a time.Time to "YYYY-MM" format for ID3 TDRC tag
 func FormatDateForID3(t time.Time) string {
 	return t.Format("2006-01")
+}
+
+// UpdateFrontmatter updates podcast_duration and podcast_bytes in the markdown file
+func UpdateFrontmatter(markdownPath, duration string, bytes int64) error {
+	// Read the entire file
+	content, err := os.ReadFile(markdownPath)
+	if err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+
+	lines := strings.Split(string(content), "\n")
+
+	// Find frontmatter boundaries
+	var start, end int
+	delimiterCount := 0
+
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "---" {
+			delimiterCount++
+			if delimiterCount == 1 {
+				start = i + 1
+			} else if delimiterCount == 2 {
+				end = i
+				break
+			}
+		}
+	}
+
+	if delimiterCount != 2 {
+		return fmt.Errorf("invalid frontmatter format")
+	}
+
+	// Update the frontmatter lines
+	updated := false
+	bytesUpdated := false
+
+	for i := start; i < end; i++ {
+		line := lines[i]
+
+		// Update podcast_duration
+		if strings.HasPrefix(strings.TrimSpace(line), "podcast_duration:") {
+			lines[i] = fmt.Sprintf("podcast_duration: %s", duration)
+			updated = true
+		}
+
+		// Update podcast_bytes
+		if strings.HasPrefix(strings.TrimSpace(line), "podcast_bytes:") {
+			lines[i] = fmt.Sprintf("podcast_bytes: %d", bytes)
+			bytesUpdated = true
+		}
+	}
+
+	// If fields don't exist, add them before the closing delimiter
+	if !updated || !bytesUpdated {
+		newLines := make([]string, 0, len(lines)+2)
+		newLines = append(newLines, lines[:end]...)
+
+		if !updated {
+			newLines = append(newLines, fmt.Sprintf("podcast_duration: %s", duration))
+		}
+		if !bytesUpdated {
+			newLines = append(newLines, fmt.Sprintf("podcast_bytes: %d", bytes))
+		}
+
+		newLines = append(newLines, lines[end:]...)
+		lines = newLines
+	}
+
+	// Write back to file
+	output := strings.Join(lines, "\n")
+	if err := os.WriteFile(markdownPath, []byte(output), 0644); err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+
+	return nil
 }
