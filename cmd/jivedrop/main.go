@@ -9,6 +9,7 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/linuxmatters/jivedrop/internal/cli"
 	"github.com/linuxmatters/jivedrop/internal/encoder"
+	"github.com/linuxmatters/jivedrop/internal/id3"
 )
 
 // version is set via ldflags at build time
@@ -83,7 +84,28 @@ func main() {
 		}
 	}
 
+	// Parse episode metadata
+	metadata, err := encoder.ParseEpisodeMetadata(CLI.EpisodeMD)
+	if err != nil {
+		cli.PrintError(fmt.Sprintf("Failed to parse episode metadata: %v", err))
+		os.Exit(1)
+	}
+
+	// Resolve cover art path (use custom cover if provided, otherwise from metadata)
+	var coverArtPath string
+	if CLI.Cover != "" {
+		coverArtPath = CLI.Cover
+	} else {
+		coverArtPath, err = encoder.ResolveCoverArtPath(CLI.EpisodeMD, metadata.EpisodeImage)
+		if err != nil {
+			cli.PrintError(fmt.Sprintf("Failed to resolve cover art: %v", err))
+			cli.PrintInfo("Use --cover flag to specify a custom cover art path.")
+			os.Exit(1)
+		}
+	}
+
 	cli.PrintSuccess(fmt.Sprintf("Ready to encode: %s -> MP3", CLI.InputFile))
+	cli.PrintInfo(fmt.Sprintf("Episode: %s - %s", metadata.Episode, metadata.Title))
 	cli.PrintInfo(fmt.Sprintf("Episode markdown: %s", CLI.EpisodeMD))
 	if CLI.OutputDir != "" {
 		cli.PrintInfo(fmt.Sprintf("Output directory: %s", CLI.OutputDir))
@@ -93,16 +115,13 @@ func main() {
 	} else {
 		cli.PrintInfo("Encoding mode: Mono 112kbps")
 	}
-	if CLI.Cover != "" {
-		cli.PrintInfo(fmt.Sprintf("Custom cover art: %s", CLI.Cover))
-	}
 
-	// Determine output path
+	// Determine output path using episode number
 	outputDir := CLI.OutputDir
 	if outputDir == "" {
 		outputDir = "."
 	}
-	outputPath := filepath.Join(outputDir, "output.mp3") // TODO: Use episode number for filename
+	outputPath := filepath.Join(outputDir, fmt.Sprintf("LMP%s.mp3", metadata.Episode))
 
 	// Create encoder
 	enc, err := encoder.New(encoder.Config{
@@ -158,5 +177,21 @@ func main() {
 	elapsed := time.Since(startTime)
 	fmt.Printf("\n")
 	cli.PrintSuccess(fmt.Sprintf("Encoded in %.1fs", elapsed.Seconds()))
-	cli.PrintSuccess(fmt.Sprintf("Output: %s", outputPath))
+
+	// Write ID3v2 tags
+	fmt.Println("\nEmbedding ID3v2 tags...")
+	tagInfo := id3.TagInfo{
+		EpisodeNumber: metadata.Episode,
+		Title:         metadata.Title,
+		Date:          encoder.FormatDateForID3(metadata.Date),
+		CoverArtPath:  coverArtPath,
+	}
+
+	if err := id3.WriteTags(outputPath, tagInfo); err != nil {
+		cli.PrintError(fmt.Sprintf("Failed to write ID3 tags: %v", err))
+		cli.PrintInfo(fmt.Sprintf("MP3 file created but missing metadata: %s", outputPath))
+		os.Exit(1)
+	}
+
+	cli.PrintSuccess(fmt.Sprintf("Complete: %s", outputPath))
 }

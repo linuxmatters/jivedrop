@@ -274,26 +274,26 @@ jivedrop/
 ### Phase 2: Metadata Integration
 **Goal:** Hugo workflow integration and ID3 tags
 
-- [ ] Hugo markdown parser
+- [x] Hugo markdown parser
   - Extract episode title, number, date and path to `episode_image` from the frontmatter in the episode markdown.
   - Validate episode file exists
-- [ ] ID3v2 tag writing
+- [x] ID3v2 tag writing
   - TIT2 (title): `{num}: {title}`
   - TALB (album): `Linux Matters`
   - TRCK (track): `{num}`
   - TPE1 (artist): `Linux Matters`
   - TDRC (date): year and month
   - COMM (comment): website URL
-- [ ] Cover art embedding (APIC frame)
+- [x] Cover art embedding (APIC frame)
 
 **Library options:**
 - `github.com/bogem/id3v2` (active, pure Go, clean API)
 - `github.com/dhowden/tag` (read/write, broader format support)
 
 **Success criteria:**
-- Episode title correctly extracted from markdown
-- ID3 tags visible in media players
-- Cover art displays in players
+- ✅ Episode title correctly extracted from markdown
+- ✅ ID3 tags visible in media players
+- ✅ Cover art displays in players
 
 ---
 
