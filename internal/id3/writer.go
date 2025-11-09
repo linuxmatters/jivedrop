@@ -2,7 +2,6 @@ package id3
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/bogem/id3v2/v2"
 )
@@ -71,10 +70,10 @@ func WriteTags(mp3Path string, info TagInfo) error {
 
 // addCoverArt adds cover artwork as an APIC frame
 func addCoverArt(tag *id3v2.Tag, coverPath string) error {
-	// Read the cover art file
-	artwork, err := os.ReadFile(coverPath)
+	// Scale the cover art according to Apple Podcasts specifications
+	artwork, err := ScaleCoverArt(coverPath)
 	if err != nil {
-		return fmt.Errorf("failed to read cover art: %w", err)
+		return fmt.Errorf("failed to scale cover art: %w", err)
 	}
 
 	// Create APIC frame

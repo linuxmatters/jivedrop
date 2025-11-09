@@ -288,7 +288,6 @@ jivedrop/
 
 **Library options:**
 - `github.com/bogem/id3v2` (active, pure Go, clean API)
-- `github.com/dhowden/tag` (read/write, broader format support)
 
 **Success criteria:**
 - ✅ Episode title correctly extracted from markdown
@@ -482,11 +481,12 @@ Frame: APIC (Attached picture)
 
 - Format: PNG (existing artwork is PNG)
 - Scaling logic:
+  - Input < 1400x1400: Scale up to 1400x1400 (bilinear interpolation)
+  - Input 1400x1400 to 3000x3000: Use as-is (no scaling artifacts)
   - Input > 3000x3000: Scale down to 3000x3000 (bilinear interpolation)
-  - Input < 3000x3000: Scale down to 1400x1400 (RSS recommended size)
-  - Input = 3000x3000: Use as-is
 - Scaler: `golang.org/x/image/draw.BiLinear` (same as Jivefire thumbnail scaling)
 - Maximum embedded size: ~500KB reasonable for PNG artwork
+- Rationale: Images within 1400-3000 range require no scaling, preserving original quality and avoiding artifacts
 
 ---
 
