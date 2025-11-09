@@ -203,13 +203,13 @@ func (e *Encoder) openOutput() error {
 		return fmt.Errorf("failed to set compression_level: %w", err)
 	}
 
-	keyLp := ffmpeg.ToCStr("lowpass")
-	defer keyLp.Free()
-	valLp := ffmpeg.ToCStr("20500") // 20.5kHz lowpass filter
-	defer valLp.Free()
-	if _, err := ffmpeg.AVDictSet(&opts, keyLp, valLp, 0); err != nil {
+	keyCutoff := ffmpeg.ToCStr("cutoff")
+	defer keyCutoff.Free()
+	valCutoff := ffmpeg.ToCStr("20500") // 20.5kHz lowpass cutoff frequency
+	defer valCutoff.Free()
+	if _, err := ffmpeg.AVDictSet(&opts, keyCutoff, valCutoff, 0); err != nil {
 		ffmpeg.AVDictFree(&opts)
-		return fmt.Errorf("failed to set lowpass: %w", err)
+		return fmt.Errorf("failed to set cutoff: %w", err)
 	}
 
 	// Open encoder

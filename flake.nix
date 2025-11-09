@@ -26,6 +26,7 @@
             gcc
             go
             just
+            lame
             mediainfo
           ];
         };

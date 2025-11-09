@@ -132,7 +132,7 @@ func TestEncoder_InvalidInput(t *testing.T) {
 				OutputPath: tt.outputPath,
 				Stereo:     false,
 			})
-			
+
 			// Check for immediate config errors
 			if err != nil {
 				if !tt.wantErr {
