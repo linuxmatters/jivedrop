@@ -354,13 +354,12 @@ jivedrop/
   - Invalid episode markdown (error with example)
   - Encoding failures (cleanup partial files)
   - Disk full scenarios
-- [ ] Overwrite protection
-  - Detect existing output file
-  - Prompt for confirmation
 - [ ] Testing
-  - Unit tests for metadata extraction
-  - Integration tests for encoding pipeline
-  - Test with various input formats
+  - [x] Unit tests for metadata extraction (frontmatter parsing, validation, error handling)
+  - [x] Unit tests for ID3 tag writing (title formatting, album/artist, comment frames, date handling)
+  - [x] Unit tests for file statistics (duration formatting, file size extraction)
+  - [x] Integration tests for encoding pipeline (mono and stereo encoding, error handling, file overwrite)
+  - [ ] Test with various input formats (WAV, FLAC variations)
 
 **Success criteria:**
 - No panics on bad input
