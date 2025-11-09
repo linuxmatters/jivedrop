@@ -1,0 +1,97 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/build.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Build for Linux ${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goarch: [amd64, arm64]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Run tests
+        env:
+          CGO_ENABLED: 1
+        run: go test -v ./...
+
+      - name: Build Linux ${{ matrix.goarch }}
+        env:
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 1
+          CC: ${{ matrix.goarch == 'arm64' && 'aarch64-linux-gnu-gcc' || 'gcc' }}
+        run: |
+          echo "Building for linux/${{ matrix.goarch }} with CGO..."
+          go build -v -o jivedrop-linux-${{ matrix.goarch }} ./cmd/jivedrop
+          ls -lh jivedrop-linux-${{ matrix.goarch }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: jivedrop-linux-${{ matrix.goarch }}
+          path: jivedrop-linux-${{ matrix.goarch }}
+
+  build-darwin:
+    name: Build for macOS ${{ matrix.goarch }}
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        goarch: [amd64, arm64]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24'
+
+      - name: Run tests
+        run: go test -v ./...
+
+      - name: Build macOS ${{ matrix.goarch }}
+        env:
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 1
+        run: |
+          echo "Building for darwin/${{ matrix.goarch }} with CGO..."
+          go build -v -o jivedrop-darwin-${{ matrix.goarch }} ./cmd/jivedrop
+          ls -lh jivedrop-darwin-${{ matrix.goarch }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: jivedrop-darwin-${{ matrix.goarch }}
+          path: jivedrop-darwin-${{ matrix.goarch }}

@@ -1,0 +1,140 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release and Upload Assets
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+            runner: ubuntu-latest
+            cc: gcc
+          - os: linux
+            arch: arm64
+            runner: ubuntu-latest
+            cc: aarch64-linux-gnu-gcc
+          - os: darwin
+            arch: amd64
+            runner: macos-latest
+            cc: cc
+          - os: darwin
+            arch: arm64
+            runner: macos-latest
+            cc: cc
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24'
+
+      - name: Install cross-compilation tools (Linux ARM64)
+        if: matrix.os == 'linux' && matrix.arch == 'arm64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          # Generate changelog between tags
+          if [ -n "$PREV_TAG" ]; then
+            echo "## Changes since $PREV_TAG" > CHANGELOG.md
+            git log $PREV_TAG..HEAD --pretty=format:"* %s (%h)" >> CHANGELOG.md
+          else
+            echo "## Initial Release" > CHANGELOG.md
+            git log --pretty=format:"* %s (%h)" >> CHANGELOG.md
+          fi
+
+          # Add release notes
+          cat >> CHANGELOG.md << 'EOF'
+
+          ## Installation
+
+          Download the appropriate binary for your platform below, make it executable, and move it to your PATH:
+
+          ```bash
+          # Linux (amd64)
+          chmod +x jivedrop-linux-amd64
+          sudo mv jivedrop-linux-amd64 /usr/local/bin/jivedrop
+
+          # macOS (Apple Silicon)
+          chmod +x jivedrop-darwin-arm64
+          sudo mv jivedrop-darwin-arm64 /usr/local/bin/jivedrop
+          ```
+
+          ## Checksums
+
+          SHA256 checksums are provided below for verification.
+          EOF
+
+          cat CHANGELOG.md
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: 1
+          CC: ${{ matrix.cc }}
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          echo "Building jivedrop $VERSION for ${{ matrix.os }}/${{ matrix.arch }}"
+          go build -ldflags="-X main.version=$VERSION" -o jivedrop-${{ matrix.os }}-${{ matrix.arch }} ./cmd/jivedrop
+
+          # Create checksum
+          if [ "${{ matrix.os }}" = "darwin" ]; then
+            shasum -a 256 jivedrop-${{ matrix.os }}-${{ matrix.arch }} > jivedrop-${{ matrix.os }}-${{ matrix.arch }}.sha256
+          else
+            sha256sum jivedrop-${{ matrix.os }}-${{ matrix.arch }} > jivedrop-${{ matrix.os }}-${{ matrix.arch }}.sha256
+          fi
+
+          ls -lh jivedrop-${{ matrix.os }}-${{ matrix.arch }}
+          cat jivedrop-${{ matrix.os }}-${{ matrix.arch }}.sha256
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v1
+        if: matrix.os == 'linux' && matrix.arch == 'amd64'  # Only create release once
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name: Jivedrop ${{ steps.get_version.outputs.version }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+          files: |
+            jivedrop-*-*.*
+            *.sha256
+
+      - name: Upload Assets (non-Linux builds)
+        uses: softprops/action-gh-release@v1
+        if: matrix.os != 'linux' || matrix.arch != 'amd64'  # Upload to existing release for other builds
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          files: |
+            jivedrop-${{ matrix.os }}-${{ matrix.arch }}
+            jivedrop-${{ matrix.os }}-${{ matrix.arch }}.sha256
