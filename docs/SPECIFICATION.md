@@ -235,27 +235,27 @@ jivedrop/
 
 ## Implementation Phases
 
-### Phase 0: Foundation (Week 1)
+### Phase 0: Foundation
 **Goal:** Project structure, dependencies, basic CLI
 
 - [x] Go module initialization
 - [x] Kong CLI argument parsing
 - [x] Styled help output (Lipgloss)
 - [x] Version flag
-- [ ] Input validation (file exists, episode markdown exists)
+- [x] Input validation (file exists, episode markdown exists)
 
 **Success criteria:**
 - ✅ `jivedrop --help` shows styled help
 - ✅ `jivedrop --version` shows version
-- [ ] File validation rejects missing files
+- ✅ File validation rejects missing files
 
 ---
 
-### Phase 1: Core Encoding (Week 2)
+### Phase 1: Core Encoding
 **Goal:** MP3 encoding via ffmpeg-go
 
 - [ ] ffmpeg-go integration
-- [ ] Audio decoder (WAV, FLAC, MP3 input)
+- [ ] Audio decoder (WAV, FLAC input)
 - [ ] LAME encoder configuration
   - CBR 112kbps
   - 44.1kHz resampling
@@ -271,7 +271,7 @@ jivedrop/
 
 ---
 
-### Phase 2: Metadata Integration (Week 2)
+### Phase 2: Metadata Integration
 **Goal:** Hugo workflow integration and ID3 tags
 
 - [ ] Hugo markdown parser
@@ -297,7 +297,7 @@ jivedrop/
 
 ---
 
-### Phase 3: Bubbletea UI (Week 3)
+### Phase 3: Bubbletea UI
 **Goal:** Professional progress indication
 
 - [ ] Encoding progress model
@@ -330,7 +330,7 @@ jivedrop/
 
 ---
 
-### Phase 4: File Statistics (Week 3)
+### Phase 4: File Statistics
 **Goal:** Output podcast frontmatter values
 
 - [ ] Extract duration from encoded MP3
@@ -347,7 +347,7 @@ jivedrop/
 
 ---
 
-### Phase 5: Production Hardening (Week 4)
+### Phase 5: Production Hardening
 **Goal:** Error handling, edge cases, polish
 
 - [ ] Error handling
