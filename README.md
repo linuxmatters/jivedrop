@@ -35,7 +35,7 @@ Your podcast deserves proper packaging. Jivedrop transforms mixed audio (WAV/FLA
 ### Advanced Options
 ```bash
 # Stereo encoding at 192kbps
-./jivedrop --stereo --bitrate=192 /path/to/epidode.md input.wav
+./jivedrop --stereo /path/to/epidode.md input.wav
 
 # Custom cover art
 ./jivedrop --cover=/path/to/artwork.png /path/to/epidode.md input.flac

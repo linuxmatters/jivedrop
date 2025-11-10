@@ -221,7 +221,7 @@ jivedrop/
 ├── docs/
 │   └── SPECIFICATION.md     # This file
 ├── testdata/
-│   ├── LMP67.wav           # Test audio
+│   ├── LMP0.flac           # Test audio
 │   └── test.png            # Test artwork
 ├── flake.nix               # Nix development shell
 ├── go.mod
@@ -306,7 +306,7 @@ jivedrop/
   - Audio specs display
 - [x] Success/error states
 - [x] Styled output matching Jivefire aesthetic
-- [ ] Tag embedding spinner (deferred - tags embed instantly)
+- [ ] ~~Tag embedding spinner (not required)~~
 
 **UI mockup:**
 ```
@@ -498,17 +498,6 @@ website/
         └── ...
 ```
 
-### Frontmatter Structure
-
-```yaml
----
-title: "Mirrors, Motors and Makefiles"
-podcast_duration: "54:09"
-podcast_bytes: 27357184
-# ... other fields
----
-```
-
 ### Extraction Logic
 
 ```go
@@ -626,81 +615,21 @@ func TestHugoWorkflow(t *testing.T)  // Mock website structure
 
 ```
 testdata/
-├── LMP0.flac              # 30-second clip
-├── cover.png              # test artwork
-└── 0.md                   # Mock episode file
+├── LMP0.flac                   # Episode 0 Audio (30s)
+├── linuxmatters-3000x3000.png  # Linux Matters Logo
+└── 0.md                        # Episode 0 Markdown
 ```
 
+### Frontmatter Structure
+
+```yaml
 ---
-
-## Performance Targets
-
-### Encoding Speed
-- Goal: >100x realtime on modern hardware
-- Acceptable: >50x realtime
-- MP3 encoding much faster than H.264 video (Jivefire)
-
-### Memory Usage
-- Peak: <100MB
-- Acceptable: <200MB
-- Streaming encode/decode (no full file buffering)
-
-### Binary Size
-- Goal: <70MB (slightly larger than Jivefire due to ID3 library)
-- Acceptable: <100MB
-- Static FFmpeg libraries are bulk of size
-
+title: "Mirrors, Motors and Makefiles"
+podcast_duration: "54:09"
+podcast_bytes: 27357184
+# ... other fields
 ---
-
-## Success Criteria
-
-### MVP Complete When:
-
-1. ✅ Encodes WAV/FLAC to MP3 matching `mp3-encode.sh` quality
-2. ✅ Embeds all ID3v2 tags correctly
-3. ✅ Embeds cover artwork
-4. ✅ Extracts episode title from Hugo markdown
-5. ✅ Displays podcast frontmatter values (duration, bytes)
-6. ✅ Bubbletea UI shows encoding progress
-7. ✅ Single binary with zero external dependencies
-8. ✅ Works on Linux and macOS
-9. ✅ Error handling matches or exceeds bash script
-10. ✅ All tests passing
-
-### Ready for Production When:
-
-- Martin successfully uses it to encode an episode
-- Output MP3 plays correctly in Apple Podcasts, Spotify, etc.
-- Frontmatter values match expected format
-- Cover art displays in podcast apps
-- Tool feels as polished as Jivefire
-
----
-
-## Open Questions
-
-1. **ID3 version:** ID3v2.3 (widely compatible) or ID3v2.4 (more features)?
-   - v2.3: Better compatibility with older players
-   - v2.4: UTF-8 support, better chapter markers
-   - Recommendation: v2.3 for broad compatibility
-
-2. **Multiple presenters:** Should episode markdown support multiple artists (Mark, Martin, Popey)?
-   - Single artist: "Linux Matters" (current approach)
-   - Multiple: TPE1 (lead), TPE2 (album artist), TIPL (involved people)
-   - Recommendation: keep simple initially, enhance later
-
----
-
-## Development Timeline
-
-**Week 1:** Foundation + Core Encoding
-**Week 2:** Metadata + ID3 Tags
-**Week 3:** Bubbletea UI + Statistics
-**Week 4:** Hardening + Testing
-
-**Total:** 4 weeks to production-ready MVP
-
----
+```
 
 ## Conclusion
 
