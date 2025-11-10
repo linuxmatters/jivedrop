@@ -19,13 +19,152 @@ import (
 // Release builds: git tag (e.g. "v0.1.0")
 var version = "dev"
 
+type WorkflowMode int
+
+const (
+	HugoMode WorkflowMode = iota
+	StandaloneMode
+)
+
 var CLI struct {
-	EpisodeMD string `arg:"" name:"episode-md" help:"Path to episode markdown file (e.g., 67.md)" optional:""`
-	InputFile string `arg:"" name:"input-file" help:"Path to audio file (WAV, FLAC)" optional:""`
-	OutputDir string `arg:"" name:"output-dir" help:"Output directory (default: current directory)" optional:""`
-	Stereo    bool   `help:"Encode as stereo at 192kbps (default: mono at 112kbps)"`
-	Cover     string `help:"Custom cover art path (overrides frontmatter)"`
-	Version   bool   `help:"Show version information"`
+	AudioFile string `arg:"" name:"audio-file" help:"Path to audio file (WAV, FLAC)" optional:""`
+	EpisodeMD string `arg:"" name:"episode-md" help:"Path to episode markdown file (Hugo mode)" optional:""`
+
+	// Metadata flags (standalone mode or Hugo overrides)
+	Num        string `help:"Episode number"`
+	Title      string `help:"Episode title"`
+	Artist     string `help:"Artist name (defaults to 'Linux Matters' in Hugo mode)"`
+	Album      string `help:"Album name (defaults to artist value if omitted)"`
+	Date       string `help:"Release date (YYYY-MM-DD format)"`
+	Comment    string `help:"Comment URL (defaults to 'https://linuxmatters.sh' in Hugo mode)"`
+	Cover      string `help:"Cover art path"`
+	OutputPath string `help:"Output file or directory path"`
+
+	// Encoding options
+	Stereo  bool `help:"Encode as stereo at 192kbps (default: mono at 112kbps)"`
+	Version bool `help:"Show version information"`
+}
+
+// detectMode determines if this is Hugo or Standalone workflow
+func detectMode() WorkflowMode {
+	// If AudioFile is empty, we have no arguments - show help
+	if CLI.AudioFile == "" {
+		return HugoMode // Return value doesn't matter, we'll exit in main
+	}
+
+	// If second argument exists and is a .md file, we're in Hugo mode
+	if CLI.EpisodeMD != "" && strings.HasSuffix(strings.ToLower(CLI.EpisodeMD), ".md") {
+		return HugoMode
+	}
+
+	return StandaloneMode
+}
+
+// validateHugoMode validates Hugo workflow arguments
+func validateHugoMode() error {
+	// In Hugo mode, episode markdown is required
+	if CLI.EpisodeMD == "" {
+		return fmt.Errorf("Hugo mode requires episode markdown file as second argument")
+	}
+
+	if !strings.HasSuffix(strings.ToLower(CLI.EpisodeMD), ".md") {
+		return fmt.Errorf("episode markdown file must have .md extension: %s", CLI.EpisodeMD)
+	}
+
+	return nil
+}
+
+// validateStandaloneMode validates standalone workflow arguments
+func validateStandaloneMode() error {
+	// In standalone mode, --title, --num, and --cover are required
+	if CLI.Title == "" {
+		return fmt.Errorf("standalone mode requires --title flag")
+	}
+
+	if CLI.Num == "" {
+		return fmt.Errorf("standalone mode requires --num flag (episode number)")
+	}
+
+	if CLI.Cover == "" {
+		return fmt.Errorf("standalone mode requires --cover flag (cover art path)")
+	}
+
+	return nil
+}
+
+// sanitiseForFilename replaces spaces and invalid characters for safe filenames
+func sanitiseForFilename(s string) string {
+	// Replace spaces with hyphens
+	s = strings.ReplaceAll(s, " ", "-")
+	// Convert to lowercase for consistency
+	s = strings.ToLower(s)
+	// Remove any characters that aren't alphanumeric, hyphens, or underscores
+	// Keep dots for file extensions
+	result := strings.Builder{}
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' || r == '_' || r == '.' {
+			result.WriteRune(r)
+		}
+	}
+	return result.String()
+}
+
+// generateFilename creates the output filename based on mode and metadata
+func generateFilename(mode WorkflowMode, num, artist string) string {
+	if mode == HugoMode {
+		// Hugo mode: LMP{num}.mp3 unless artist is overridden
+		if CLI.Artist != "" && CLI.Artist != "Linux Matters" {
+			// Custom artist provided
+			sanitisedArtist := sanitiseForFilename(artist)
+			return fmt.Sprintf("%s-%s.mp3", sanitisedArtist, num)
+		}
+		// Default Linux Matters format
+		return fmt.Sprintf("LMP%s.mp3", num)
+	}
+
+	// Standalone mode: {artist}-{num}.mp3 or episode-{num}.mp3 fallback
+	if artist != "" {
+		sanitisedArtist := sanitiseForFilename(artist)
+		return fmt.Sprintf("%s-%s.mp3", sanitisedArtist, num)
+	}
+
+	return fmt.Sprintf("episode-%s.mp3", num)
+}
+
+// resolveOutputPath determines final output file path
+func resolveOutputPath(mode WorkflowMode, num, artist string) (string, error) {
+	if CLI.OutputPath == "" {
+		// No output path specified, use current directory with generated filename
+		filename := generateFilename(mode, num, artist)
+		return filename, nil
+	}
+
+	// Check if OutputPath is a directory or file
+	stat, err := os.Stat(CLI.OutputPath)
+	if err == nil {
+		if stat.IsDir() {
+			// It's a directory, generate filename
+			filename := generateFilename(mode, num, artist)
+			return filepath.Join(CLI.OutputPath, filename), nil
+		}
+		// It's a file path, use as-is
+		return CLI.OutputPath, nil
+	}
+
+	// Path doesn't exist - check if it ends with / to determine intent
+	if strings.HasSuffix(CLI.OutputPath, "/") {
+		return "", fmt.Errorf("output directory does not exist: %s", CLI.OutputPath)
+	}
+
+	// Assume it's a file path (may be in non-existent directory)
+	dir := filepath.Dir(CLI.OutputPath)
+	if dir != "." && dir != "" {
+		if stat, err := os.Stat(dir); err != nil || !stat.IsDir() {
+			return "", fmt.Errorf("output directory does not exist: %s", dir)
+		}
+	}
+
+	return CLI.OutputPath, nil
 }
 
 func main() {
@@ -43,36 +182,42 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Validate required arguments when not showing version
-	if CLI.EpisodeMD == "" || CLI.InputFile == "" {
-		cli.PrintError("<episode-md> and <input-file> are required")
-		os.Exit(1)
+	// If no audio file provided, show help
+	if CLI.AudioFile == "" {
+		_ = ctx.PrintUsage(false)
+		os.Exit(0)
+	}
+
+	// Detect workflow mode and validate arguments
+	mode := detectMode()
+
+	// Mode-specific validation
+	if mode == HugoMode {
+		if err := validateHugoMode(); err != nil {
+			cli.PrintError(err.Error())
+			os.Exit(1)
+		}
+	} else {
+		if err := validateStandaloneMode(); err != nil {
+			cli.PrintError(err.Error())
+			os.Exit(1)
+		}
 	}
 
 	_ = ctx // Kong context available for future use
 
-	// Validate episode markdown file exists
-	if _, err := os.Stat(CLI.EpisodeMD); os.IsNotExist(err) {
-		cli.PrintError(fmt.Sprintf("Episode file not found: %s", CLI.EpisodeMD))
-		cli.PrintInfo("Make sure the episode markdown file exists.")
-		os.Exit(1)
-	}
-
-	// Validate input audio file exists
-	if _, err := os.Stat(CLI.InputFile); os.IsNotExist(err) {
-		cli.PrintError(fmt.Sprintf("Input file not found: %s", CLI.InputFile))
+	// Validate audio file exists
+	if _, err := os.Stat(CLI.AudioFile); os.IsNotExist(err) {
+		cli.PrintError(fmt.Sprintf("Audio file not found: %s", CLI.AudioFile))
 		cli.PrintInfo("Make sure the audio file exists.")
 		os.Exit(1)
 	}
 
-	// Validate output directory exists (if specified)
-	if CLI.OutputDir != "" {
-		if stat, err := os.Stat(CLI.OutputDir); os.IsNotExist(err) {
-			cli.PrintError(fmt.Sprintf("Output directory not found: %s", CLI.OutputDir))
-			cli.PrintInfo("Make sure the directory exists.")
-			os.Exit(1)
-		} else if !stat.IsDir() {
-			cli.PrintError(fmt.Sprintf("Output path is not a directory: %s", CLI.OutputDir))
+	// Validate episode markdown file exists (Hugo mode)
+	if mode == HugoMode {
+		if _, err := os.Stat(CLI.EpisodeMD); os.IsNotExist(err) {
+			cli.PrintError(fmt.Sprintf("Episode file not found: %s", CLI.EpisodeMD))
+			cli.PrintInfo("Make sure the episode markdown file exists.")
 			os.Exit(1)
 		}
 	}
@@ -86,48 +231,98 @@ func main() {
 		}
 	}
 
-	// Parse episode metadata
-	metadata, err := encoder.ParseEpisodeMetadata(CLI.EpisodeMD)
-	if err != nil {
-		cli.PrintError(fmt.Sprintf("Failed to parse episode metadata: %v", err))
-		os.Exit(1)
-	}
+	// Collect metadata based on workflow mode
+	var episodeNum, episodeTitle, artist, album, date, comment, coverArtPath string
+	var hugoMetadata *encoder.EpisodeMetadata
 
-	// Resolve cover art path (use custom cover if provided, otherwise from metadata)
-	var coverArtPath string
-	if CLI.Cover != "" {
-		coverArtPath = CLI.Cover
-	} else {
-		coverArtPath, err = encoder.ResolveCoverArtPath(CLI.EpisodeMD, metadata.EpisodeImage)
+	if mode == HugoMode {
+		// Parse episode metadata from markdown
+		var err error
+		hugoMetadata, err = encoder.ParseEpisodeMetadata(CLI.EpisodeMD)
 		if err != nil {
-			cli.PrintError(fmt.Sprintf("Failed to resolve cover art: %v", err))
-			cli.PrintInfo("Use --cover flag to specify a custom cover art path.")
+			cli.PrintError(fmt.Sprintf("Failed to parse episode metadata: %v", err))
 			os.Exit(1)
+		}
+
+		// Apply Hugo defaults
+		episodeNum = hugoMetadata.Episode
+		episodeTitle = hugoMetadata.Title
+		artist = "Linux Matters"
+		comment = "https://linuxmatters.sh"
+		date = encoder.FormatDateForID3(hugoMetadata.Date)
+
+		// Allow flag overrides
+		if CLI.Artist != "" {
+			artist = CLI.Artist
+		}
+		if CLI.Album != "" {
+			album = CLI.Album
+		} else {
+			album = artist // Inherit from artist
+		}
+		if CLI.Comment != "" {
+			comment = CLI.Comment
+		}
+		if CLI.Title != "" {
+			episodeTitle = CLI.Title
+		}
+		if CLI.Num != "" {
+			episodeNum = CLI.Num
+		}
+		if CLI.Date != "" {
+			date = CLI.Date
+		}
+
+		// Resolve cover art path
+		if CLI.Cover != "" {
+			coverArtPath = CLI.Cover
+		} else {
+			coverArtPath, err = encoder.ResolveCoverArtPath(CLI.EpisodeMD, hugoMetadata.EpisodeImage)
+			if err != nil {
+				cli.PrintError(fmt.Sprintf("Failed to resolve cover art: %v", err))
+				cli.PrintInfo("Use --cover flag to specify a custom cover art path.")
+				os.Exit(1)
+			}
+		}
+	} else {
+		// Standalone mode: use CLI flags
+		episodeNum = CLI.Num
+		episodeTitle = CLI.Title
+		artist = CLI.Artist
+		album = CLI.Album
+		date = CLI.Date
+		comment = CLI.Comment
+		coverArtPath = CLI.Cover
+
+		// Apply defaults for standalone mode
+		if album == "" && artist != "" {
+			album = artist // Inherit from artist
 		}
 	}
 
-	cli.PrintSuccess(fmt.Sprintf("Ready to encode: %s -> MP3", CLI.InputFile))
-	cli.PrintInfo(fmt.Sprintf("Episode: %s - %s", metadata.Episode, metadata.Title))
-	cli.PrintInfo(fmt.Sprintf("Episode markdown: %s", CLI.EpisodeMD))
-	if CLI.OutputDir != "" {
-		cli.PrintInfo(fmt.Sprintf("Output directory: %s", CLI.OutputDir))
+	// Resolve output path
+	outputPath, err := resolveOutputPath(mode, episodeNum, artist)
+	if err != nil {
+		cli.PrintError(fmt.Sprintf("Failed to resolve output path: %v", err))
+		os.Exit(1)
 	}
+
+	// Display encoding info
+	cli.PrintSuccess(fmt.Sprintf("Ready to encode: %s -> MP3", CLI.AudioFile))
+	cli.PrintInfo(fmt.Sprintf("Episode: %s - %s", episodeNum, episodeTitle))
+	if mode == HugoMode {
+		cli.PrintInfo(fmt.Sprintf("Episode markdown: %s", CLI.EpisodeMD))
+	}
+	cli.PrintInfo(fmt.Sprintf("Output: %s", outputPath))
 	if CLI.Stereo {
 		cli.PrintInfo("Encoding mode: Stereo 192kbps")
 	} else {
 		cli.PrintInfo("Encoding mode: Mono 112kbps")
 	}
 
-	// Determine output path using episode number
-	outputDir := CLI.OutputDir
-	if outputDir == "" {
-		outputDir = "."
-	}
-	outputPath := filepath.Join(outputDir, fmt.Sprintf("LMP%s.mp3", metadata.Episode))
-
 	// Create encoder
 	enc, err := encoder.New(encoder.Config{
-		InputPath:  CLI.InputFile,
+		InputPath:  CLI.AudioFile,
 		OutputPath: outputPath,
 		Stereo:     CLI.Stereo,
 	})
@@ -185,9 +380,12 @@ func main() {
 	// Write ID3v2 tags
 	fmt.Println("\nEmbedding ID3v2 tags...")
 	tagInfo := id3.TagInfo{
-		EpisodeNumber: metadata.Episode,
-		Title:         metadata.Title,
-		Date:          encoder.FormatDateForID3(metadata.Date),
+		EpisodeNumber: episodeNum,
+		Title:         episodeTitle,
+		Artist:        artist,
+		Album:         album,
+		Date:          date,
+		Comment:       comment,
 		CoverArtPath:  coverArtPath,
 	}
 
@@ -199,59 +397,66 @@ func main() {
 
 	cli.PrintSuccess(fmt.Sprintf("Complete: %s", outputPath))
 
-	// Extract file statistics for podcast frontmatter
+	// Extract file statistics
 	stats, err := encoder.GetFileStats(outputPath)
 	if err != nil {
 		cli.PrintWarning(fmt.Sprintf("Could not extract file statistics: %v", err))
-	} else {
-		// Display podcast frontmatter values
-		fmt.Println("\nPodcast frontmatter:")
-		cli.PrintInfo(fmt.Sprintf("  podcast_duration: %s", stats.DurationString))
-		cli.PrintInfo(fmt.Sprintf("  podcast_bytes: %d", stats.FileSizeBytes))
+		return
+	}
 
-		// Check if values differ from existing frontmatter
-		needsUpdate := false
-		if metadata.PodcastDuration != "" && metadata.PodcastDuration != stats.DurationString {
-			cli.PrintWarning(fmt.Sprintf("Duration mismatch: frontmatter has %s, calculated %s",
-				metadata.PodcastDuration, stats.DurationString))
-			needsUpdate = true
-		}
-		if metadata.PodcastBytes > 0 && metadata.PodcastBytes != stats.FileSizeBytes {
-			cli.PrintWarning(fmt.Sprintf("File size mismatch: frontmatter has %d, calculated %d",
-				metadata.PodcastBytes, stats.FileSizeBytes))
-			needsUpdate = true
-		}
+	// Display podcast statistics (both modes)
+	fmt.Println("\nPodcast statistics:")
+	cli.PrintInfo(fmt.Sprintf("  podcast_duration: %s", stats.DurationString))
+	cli.PrintInfo(fmt.Sprintf("  podcast_bytes: %d", stats.FileSizeBytes))
 
-		// Prompt user to update frontmatter if values differ
-		if needsUpdate {
-			fmt.Print("\nUpdate frontmatter with new values? [y/N]: ")
-			var response string
-			fmt.Scanln(&response)
+	// Only handle frontmatter updates in Hugo mode
+	if mode == StandaloneMode {
+		return
+	}
 
-			if strings.ToLower(strings.TrimSpace(response)) == "y" {
-				if err := encoder.UpdateFrontmatter(CLI.EpisodeMD, stats.DurationString, stats.FileSizeBytes); err != nil {
-					cli.PrintError(fmt.Sprintf("Failed to update frontmatter: %v", err))
-				} else {
-					cli.PrintSuccess("Frontmatter updated successfully")
-				}
+	// Hugo mode: check and update frontmatter if needed
+	// Check if values differ from existing frontmatter
+	needsUpdate := false
+	if hugoMetadata.PodcastDuration != "" && hugoMetadata.PodcastDuration != stats.DurationString {
+		cli.PrintWarning(fmt.Sprintf("Duration mismatch: frontmatter has %s, calculated %s",
+			hugoMetadata.PodcastDuration, stats.DurationString))
+		needsUpdate = true
+	}
+	if hugoMetadata.PodcastBytes > 0 && hugoMetadata.PodcastBytes != stats.FileSizeBytes {
+		cli.PrintWarning(fmt.Sprintf("File size mismatch: frontmatter has %d, calculated %d",
+			hugoMetadata.PodcastBytes, stats.FileSizeBytes))
+		needsUpdate = true
+	}
+
+	// Prompt user to update frontmatter if values differ
+	if needsUpdate {
+		fmt.Print("\nUpdate frontmatter with new values? [y/N]: ")
+		var response string
+		fmt.Scanln(&response)
+
+		if strings.ToLower(strings.TrimSpace(response)) == "y" {
+			if err := encoder.UpdateFrontmatter(CLI.EpisodeMD, stats.DurationString, stats.FileSizeBytes); err != nil {
+				cli.PrintError(fmt.Sprintf("Failed to update frontmatter: %v", err))
 			} else {
-				cli.PrintInfo("Frontmatter not updated")
+				cli.PrintSuccess("Frontmatter updated successfully")
 			}
-		} else if metadata.PodcastDuration == "" || metadata.PodcastBytes == 0 {
-			// If frontmatter is missing these fields, offer to add them
-			fmt.Print("\nAdd podcast_duration and podcast_bytes to frontmatter? [y/N]: ")
-			var response string
-			fmt.Scanln(&response)
+		} else {
+			cli.PrintInfo("Frontmatter not updated")
+		}
+	} else if hugoMetadata.PodcastDuration == "" || hugoMetadata.PodcastBytes == 0 {
+		// If frontmatter is missing these fields, offer to add them
+		fmt.Print("\nAdd podcast_duration and podcast_bytes to frontmatter? [y/N]: ")
+		var response string
+		fmt.Scanln(&response)
 
-			if strings.ToLower(strings.TrimSpace(response)) == "y" {
-				if err := encoder.UpdateFrontmatter(CLI.EpisodeMD, stats.DurationString, stats.FileSizeBytes); err != nil {
-					cli.PrintError(fmt.Sprintf("Failed to update frontmatter: %v", err))
-				} else {
-					cli.PrintSuccess("Frontmatter updated successfully")
-				}
+		if strings.ToLower(strings.TrimSpace(response)) == "y" {
+			if err := encoder.UpdateFrontmatter(CLI.EpisodeMD, stats.DurationString, stats.FileSizeBytes); err != nil {
+				cli.PrintError(fmt.Sprintf("Failed to update frontmatter: %v", err))
 			} else {
-				cli.PrintInfo("Frontmatter not updated")
+				cli.PrintSuccess("Frontmatter updated successfully")
 			}
+		} else {
+			cli.PrintInfo("Frontmatter not updated")
 		}
 	}
 }

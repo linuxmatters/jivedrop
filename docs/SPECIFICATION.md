@@ -372,11 +372,11 @@ jivedrop/
 ### Phase 6: Standalone Workflow Support
 **Goal:** Support non-Hugo podcast producers with explicit metadata flags
 
-- [ ] Dual-mode argument handling
+- [x] Dual-mode argument handling
   - Audio-first argument ordering for both modes
   - Smart mode detection (second arg `.md` triggers Hugo mode)
   - Standalone mode requires `--title` and `--num` flags
-- [ ] Metadata flags (standalone mode)
+- [x] Metadata flags (standalone mode)
   - `--title TEXT` (required): Episode title
   - `--num NUMBER` (required): Episode number
   - `--artist TEXT` (optional): Artist/podcast name
@@ -384,40 +384,40 @@ jivedrop/
   - `--date TEXT` (optional): Recording date in YYYY-MM format (defaults to current date)
   - `--comment TEXT` (optional): Comment/URL field
   - `--cover PATH` (optional): Cover artwork path
-- [ ] Hugo mode override capability
+- [x] Hugo mode override capability
   - All metadata flags available in Hugo mode to override frontmatter/defaults
   - `--artist` override changes output filename pattern
   - Linux Matters defaults applied when flags not provided
-- [ ] Intelligent filename generation
+- [x] Intelligent filename generation
   - **Hugo mode default:** `LMP{num}.mp3` (Linux Matters convention)
   - **Hugo mode with artist override:** `{artist}-{num}.mp3`
   - **Standalone with artist:** `{artist}-{num}.mp3` (sanitised for filesystem)
   - **Standalone without artist:** `episode-{num}.mp3`
   - Filename sanitisation: spaces to hyphens, remove invalid characters, preserve case
-- [ ] Output path handling
+- [x] Output path handling
   - `--output-path` flag available in both modes
   - Full path: `/tmp/custom.mp3` → use as specified
   - Directory path: `/tmp/` → generate filename in that directory
   - No path: generate filename in current directory
-- [ ] Album field inheritance
+- [x] Album field inheritance
   - If `--album` not provided, inherit from `--artist`
   - Omit TALB frame entirely if neither provided
   - Explicit `--album` always takes precedence
-- [ ] Metadata omission strategy
+- [x] Metadata omission strategy
   - Artist: omit TPE1 frame if not provided (no "Unknown Artist" placeholder)
   - Album: omit TALB frame if not provided
   - Comment: omit COMM frame if not provided
   - Date: use current YYYY-MM if not provided
-- [ ] Hugo mode defaults
+- [x] Hugo mode defaults
   - Artist: "Linux Matters" (overrideable)
   - Album: Inherits from artist (overrideable)
   - Comment: "https://linuxmatters.sh" (overrideable)
   - All frontmatter values still extracted and used
-- [ ] Date format handling
+- [x] Date format handling
   - Standalone: Accept YYYY-MM format directly
   - Hugo: Extract YYYY-MM from frontmatter Date timestamp
   - Default: Current date in YYYY-MM format
-- [ ] CLI argument validation
+- [x] CLI argument validation
   - Standalone mode: error if `--title` or `--num` missing
   - Audio file always first argument (both modes)
   - Second argument `.md` detection for mode switching

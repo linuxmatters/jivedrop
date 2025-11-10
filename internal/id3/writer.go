@@ -10,8 +10,11 @@ import (
 type TagInfo struct {
 	EpisodeNumber string
 	Title         string
-	Date          string // Format: "YYYY-MM"
-	CoverArtPath  string
+	Artist        string // Optional: defaults to empty if not provided
+	Album         string // Optional: defaults to empty if not provided
+	Date          string // Optional: Format: "YYYY-MM"
+	Comment       string // Optional: defaults to empty if not provided
+	CoverArtPath  string // Optional
 }
 
 // WriteTags writes ID3v2.4 tags to an MP3 file
@@ -30,28 +33,34 @@ func WriteTags(mp3Path string, info TagInfo) error {
 	titleFrame := fmt.Sprintf("%s: %s", info.EpisodeNumber, info.Title)
 	tag.SetTitle(titleFrame)
 
-	// TALB: Album = "Linux Matters"
-	tag.SetAlbum("Linux Matters")
+	// TALB: Album (only if provided)
+	if info.Album != "" {
+		tag.SetAlbum(info.Album)
+	}
 
 	// TRCK: Track number
 	tag.AddTextFrame(tag.CommonID("Track number/Position in set"), tag.DefaultEncoding(), info.EpisodeNumber)
 
-	// TPE1: Artist = "Linux Matters"
-	tag.SetArtist("Linux Matters")
+	// TPE1: Artist (only if provided)
+	if info.Artist != "" {
+		tag.SetArtist(info.Artist)
+	}
 
 	// TDRC: Recording date (year and month)
 	if info.Date != "" {
 		tag.AddTextFrame(tag.CommonID("Recording time"), tag.DefaultEncoding(), info.Date)
 	}
 
-	// COMM: Comment = website URL
-	commentFrame := id3v2.CommentFrame{
-		Encoding:    id3v2.EncodingUTF8,
-		Language:    "eng",
-		Description: "",
-		Text:        "https://linuxmatters.sh/",
+	// COMM: Comment (only if provided)
+	if info.Comment != "" {
+		commentFrame := id3v2.CommentFrame{
+			Encoding:    id3v2.EncodingUTF8,
+			Language:    "eng",
+			Description: "",
+			Text:        info.Comment,
+		}
+		tag.AddCommentFrame(commentFrame)
 	}
-	tag.AddCommentFrame(commentFrame)
 
 	// APIC: Cover art
 	if info.CoverArtPath != "" {

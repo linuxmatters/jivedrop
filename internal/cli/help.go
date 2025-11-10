@@ -15,6 +15,10 @@ var (
 			Foreground(lipgloss.Color("#A40000")).
 			MarginBottom(1)
 
+	helpModeStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#A40000"))
+
 	helpDescStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFA500")).
 			Italic(true).
@@ -52,7 +56,13 @@ func StyledHelpPrinter(options kong.HelpOptions) kong.HelpPrinter {
 		// Usage
 		sb.WriteString(helpSectionStyle.Render("Usage:"))
 		sb.WriteString("\n  ")
-		sb.WriteString(fmt.Sprintf("%s [<episode-md> [<input-file> [<output-dir>]]] [flags]", ctx.Model.Name))
+		sb.WriteString(helpModeStyle.Render("Hugo mode:"))
+		sb.WriteString("\n    ")
+		sb.WriteString(fmt.Sprintf("%s <audio-file> <episode-md> [flags]", ctx.Model.Name))
+		sb.WriteString("\n  ")
+		sb.WriteString(helpModeStyle.Render("Standalone mode:"))
+		sb.WriteString("\n    ")
+		sb.WriteString(fmt.Sprintf("%s <audio-file> --title TEXT --num NUMBER --cover PATH [flags]", ctx.Model.Name))
 		sb.WriteString("\n")
 
 		// Arguments section
