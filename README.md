@@ -1,10 +1,10 @@
 # Jivedrop 🪩
 
-> Drop your podcast .wav into distribution-ready MP3. ID3 tags, cover art, and frontmatter values—all in one go.
+> Drop the mix, ship the show—metadata, cover art, and all.
 
 ## The Groove
 
-Your podcast deserves proper packaging. Jivedrop transforms mixed audio (WAV/FLAC) into RSS-ready MP3 files with embedded artwork, complete metadata, and zero hassle.
+Jivedrop takes your mixed podcast audio (WAV/FLAC) and outputs RSS-ready MP3 files—optimized encoding, embedded artwork, complete ID3 metadata. One command, distribution-ready output.
 
 ### What's Cooking
 

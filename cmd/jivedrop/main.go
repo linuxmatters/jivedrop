@@ -170,7 +170,7 @@ func resolveOutputPath(mode WorkflowMode, num, artist string) (string, error) {
 func main() {
 	ctx := kong.Parse(&CLI,
 		kong.Name("jivedrop"),
-		kong.Description("Drop your podcast audio into RSS-ready MP3s with embedded artwork and ID3 metadata."),
+		kong.Description("Drop the mix, ship the show—metadata, cover art, and all."),
 		kong.Vars{"version": version},
 		kong.UsageOnError(),
 		kong.Help(cli.StyledHelpPrinter(kong.HelpOptions{Compact: true})),
