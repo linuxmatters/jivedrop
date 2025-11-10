@@ -369,6 +369,159 @@ jivedrop/
 
 ---
 
+### Phase 6: Standalone Workflow Support
+**Goal:** Support non-Hugo podcast producers with explicit metadata flags
+
+- [ ] Dual-mode argument handling
+  - Audio-first argument ordering for both modes
+  - Smart mode detection (second arg `.md` triggers Hugo mode)
+  - Standalone mode requires `--title` and `--num` flags
+- [ ] Metadata flags (standalone mode)
+  - `--title TEXT` (required): Episode title
+  - `--num NUMBER` (required): Episode number
+  - `--artist TEXT` (optional): Artist/podcast name
+  - `--album TEXT` (optional): Album name (defaults to `--artist` value)
+  - `--date TEXT` (optional): Recording date in YYYY-MM format (defaults to current date)
+  - `--comment TEXT` (optional): Comment/URL field
+  - `--cover PATH` (optional): Cover artwork path
+- [ ] Hugo mode override capability
+  - All metadata flags available in Hugo mode to override frontmatter/defaults
+  - `--artist` override changes output filename pattern
+  - Linux Matters defaults applied when flags not provided
+- [ ] Intelligent filename generation
+  - **Hugo mode default:** `LMP{num}.mp3` (Linux Matters convention)
+  - **Hugo mode with artist override:** `{artist}-{num}.mp3`
+  - **Standalone with artist:** `{artist}-{num}.mp3` (sanitised for filesystem)
+  - **Standalone without artist:** `episode-{num}.mp3`
+  - Filename sanitisation: spaces to hyphens, remove invalid characters, preserve case
+- [ ] Output path handling
+  - `--output-path` flag available in both modes
+  - Full path: `/tmp/custom.mp3` → use as specified
+  - Directory path: `/tmp/` → generate filename in that directory
+  - No path: generate filename in current directory
+- [ ] Album field inheritance
+  - If `--album` not provided, inherit from `--artist`
+  - Omit TALB frame entirely if neither provided
+  - Explicit `--album` always takes precedence
+- [ ] Metadata omission strategy
+  - Artist: omit TPE1 frame if not provided (no "Unknown Artist" placeholder)
+  - Album: omit TALB frame if not provided
+  - Comment: omit COMM frame if not provided
+  - Date: use current YYYY-MM if not provided
+- [ ] Hugo mode defaults
+  - Artist: "Linux Matters" (overrideable)
+  - Album: Inherits from artist (overrideable)
+  - Comment: "https://linuxmatters.sh" (overrideable)
+  - All frontmatter values still extracted and used
+- [ ] Date format handling
+  - Standalone: Accept YYYY-MM format directly
+  - Hugo: Extract YYYY-MM from frontmatter Date timestamp
+  - Default: Current date in YYYY-MM format
+- [ ] CLI argument validation
+  - Standalone mode: error if `--title` or `--num` missing
+  - Audio file always first argument (both modes)
+  - Second argument `.md` detection for mode switching
+  - Clear error messages for missing required flags
+
+**CLI Examples:**
+
+```bash
+# Hugo mode (unchanged behaviour)
+jivedrop LMP67.wav episode/67.md
+# → LMP67.mp3 with Linux Matters defaults
+
+# Hugo mode with overrides
+jivedrop LMP67.wav episode/67.md \
+  --artist "Late Night Linux" \
+  --comment "https://latenightlinux.com"
+# → Late-Night-Linux-67.mp3
+
+# Standalone mode (minimal)
+jivedrop audio.wav --title "My Episode" --num 1
+# → episode-1.mp3
+
+# Standalone mode (full metadata)
+jivedrop audio.wav \
+  --title "Mirrors, Motors and Makefiles" \
+  --num 67 \
+  --artist "Linux Matters" \
+  --album "Season 2" \
+  --date "2025-11" \
+  --comment "https://linuxmatters.sh/67" \
+  --cover artwork.png \
+  --stereo
+# → Linux-Matters-67.mp3
+
+# Custom output path (both modes)
+jivedrop audio.wav episode.md --output-path /tmp/
+# → /tmp/LMP67.mp3
+
+jivedrop audio.wav --title "..." --num 42 --output-path custom.mp3
+# → custom.mp3
+```
+
+**Mode Detection Logic:**
+
+```go
+func detectMode(args []string) (Mode, error) {
+    if len(args) < 1 {
+        return "", errors.New("audio file required as first argument")
+    }
+
+    audioFile := args[0]
+    if !isAudioFile(audioFile) {
+        return "", fmt.Errorf("first argument must be audio file (WAV/FLAC), got: %s", audioFile)
+    }
+
+    // Check if second arg is markdown
+    if len(args) >= 2 && strings.HasSuffix(args[1], ".md") {
+        return HugoMode, nil
+    }
+
+    return StandaloneMode, nil
+}
+```
+
+**Filename Generation:**
+
+```go
+func generateFilename(mode Mode, num int, artist string) string {
+    if mode == HugoMode {
+        // Linux Matters default, unless artist override provided
+        if artist != "" && artist != "Linux Matters" {
+            return fmt.Sprintf("%s-%d.mp3", sanitiseForFilename(artist), num)
+        }
+        return fmt.Sprintf("LMP%d.mp3", num)
+    }
+
+    // Standalone mode
+    if artist != "" {
+        return fmt.Sprintf("%s-%d.mp3", sanitiseForFilename(artist), num)
+    }
+    return fmt.Sprintf("episode-%d.mp3", num)
+}
+
+func sanitiseForFilename(s string) string {
+    // Replace spaces with hyphens
+    s = strings.ReplaceAll(s, " ", "-")
+    // Remove characters invalid for filenames (cross-platform safe)
+    s = regexp.MustCompile(`[^\w\-]`).ReplaceAllString(s, "")
+    return s
+}
+```
+
+**Success criteria:**
+- Hugo workflow unchanged (backward compatible)
+- Standalone users can encode without creating markdown files
+- All metadata flags work correctly in both modes
+- Filename generation follows artist-based logic
+- Output path handling works for files and directories
+- Clear validation errors for missing required flags
+- Album inherits from artist when not specified
+- Metadata omitted cleanly when not provided
+
+---
+
 ## Dependencies
 
 ### Core
