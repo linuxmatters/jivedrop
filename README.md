@@ -123,12 +123,17 @@ Flags:
 
 ## Build
 
-```bash
-just build      # Build binary
-just mp3        # Encode test audio
+Jivedrop uses [ffmpeg-statigo](https://github.com/linuxmatters/ffmpeg-statigo) for FFmpeg 8.0 static bindings.
 
-# Manual
-go build -o jivedrop ./cmd/jivedrop
+```bash
+# First time setup (download FFmpeg libraries)
+git submodule update --init --recursive
+just setup
+
+# Build and test
+just build      # Build binary
+just test       # Run tests
+just mp3        # Encode test audio
 ```
 
 ## Specification

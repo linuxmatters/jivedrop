@@ -526,21 +526,20 @@ func sanitiseForFilename(s string) string {
 
 ### Core
 ```go
-github.com/csnewman/ffmpeg-go v0.6.0         // MP3 encoding
+github.com/linuxmatters/ffmpeg-statigo       // FFmpeg 8.0 static bindings (MP3 encoding)
 github.com/charmbracelet/bubbletea v1.3.10   // TUI framework
 github.com/charmbracelet/lipgloss v1.1.0     // Styling
-github.com/alecthomas/kong v1.12.1           // CLI parsing
+github.com/alecthomas/kong v1.13.0           // CLI parsing
 ```
 
 ### ID3 Tags
 ```go
-github.com/bogem/id3v2 v1.2.0                // ID3v2 tag writing
+github.com/bogem/id3v2/v2 v2.1.4             // ID3v2 tag writing
 ```
 
 ### Metadata Parsing
 ```go
-github.com/BurntSushi/toml v1.4.0            // Hugo frontmatter (if TOML)
-gopkg.in/yaml.v3 v3.0.1                      // Hugo frontmatter (if YAML)
+gopkg.in/yaml.v3 v3.0.1                      // Hugo frontmatter (YAML)
 ```
 
 Standard library sufficient for:
@@ -799,7 +798,7 @@ The tool maintains the "Jive" family aesthetic and engineering standards while s
 
 This a Jivedrop, a Go project, that encodes podcast audio file to MP3 (with covert art and ID3v2 tags) suitable for including in a podcast RSS feed.
 
-Orientate yourself with the project by reading `README.md` and `docs/SPECIFICATION.md` and analysing the code. You should refer to the `ffmpeg-go` source code when required, it can usually be found in `/tmp/ffmpeg-go-research`, but if it is not there you can use `gh` to clone it from https://github.com/csnewman/ffmpeg-go
+Orientate yourself with the project by reading `README.md` and `docs/SPECIFICATION.md` and analysing the code. This project uses `ffmpeg-statigo` for FFmpeg 8.0 static bindings, included as a git submodule in `vendor/ffmpeg-statigo`.
 
 Sample data is in `testdata/`. You should only build and test via `just` commands. We are using NixOS as the host operating system and `flake.nix` provides tooling for the development shell. I use the `fish` shell. If you need to create "throw-away" test code, the put it in `testdata/`.
 

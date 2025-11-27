@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/csnewman/ffmpeg-go"
+	"github.com/linuxmatters/ffmpeg-statigo"
 )
 
 // Encoder handles MP3 encoding from audio input files
@@ -174,13 +174,11 @@ func (e *Encoder) openOutput() error {
 	if e.stereo {
 		// Stereo mode: 192kbps
 		e.encCtx.SetBitRate(192000)
-		e.encCtx.SetChannels(2)
-		e.encCtx.SetChannelLayout(ffmpeg.AVChLayoutStereo)
+		ffmpeg.AVChannelLayoutDefault(e.encCtx.ChLayout(), 2)
 	} else {
 		// Mono mode: 112kbps
 		e.encCtx.SetBitRate(112000)
-		e.encCtx.SetChannels(1)
-		e.encCtx.SetChannelLayout(ffmpeg.AVChLayoutMono)
+		ffmpeg.AVChannelLayoutDefault(e.encCtx.ChLayout(), 1)
 	}
 
 	e.encCtx.SetSampleRate(44100)
@@ -589,5 +587,5 @@ func (e *Encoder) GetInputInfo() (sampleRate, channels int, format string) {
 	}
 
 	codecName := e.decCtx.Codec().Name()
-	return e.decCtx.SampleRate(), e.decCtx.Channels(), codecName.String()
+	return e.decCtx.SampleRate(), e.decCtx.ChLayout().NbChannels(), codecName.String()
 }
