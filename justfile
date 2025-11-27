@@ -33,8 +33,9 @@ install: build
 
 # Run MP3 encoding test
 mp3: build
-    @echo n | ./jivedrop testdata/LMP0.flac testdata/0.md --output-path testdata/
+    @echo n | ./jivedrop testdata/LMP67.flac testdata/67.md --output-path testdata/
 
+# Record gif
 vhs: build
     @vhs ./jivedrop.tape
 

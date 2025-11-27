@@ -69,7 +69,7 @@ Set WindowBarSize 32
 Set TypingSpeed 27ms
 Set Theme catppuccin-mocha
 
-Type "./jivedrop testdata/67.md testdata/LMP67.flac" Sleep 250ms  Enter
-Sleep 10s
+Type "./jivedrop testdata/LMP67.flac testdata/67.md" Sleep 250ms  Enter
+Sleep 4s
 Type "n" Sleep 250ms  Enter
 Sleep 4s
