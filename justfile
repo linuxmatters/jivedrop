@@ -12,7 +12,19 @@ setup:
     cd vendor/ffmpeg-statigo && go run ./cmd/download-lib
     echo "Setup complete!"
 
-# Build the jivedrop binary (dev version)
+# Update ffmpeg-statigo submodule
+update-ffmpeg:
+    #!/usr/bin/env bash
+    echo "Updating ffmpeg-statigo submodule..."
+    cd vendor/ffmpeg-statigo
+    git pull origin main
+    cd ../..
+    git add vendor/ffmpeg-statigo
+    echo "Submodule updated"
+    just setup
+    echo "Don't forget to commit: git commit -m 'chore: update ffmpeg-statigo submodule'"
+
+# Build jivedrop (dev version)
 build:
     #!/usr/bin/env bash
     VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
@@ -38,6 +50,7 @@ mp3: build
 # Record gif
 vhs: build
     @vhs ./jivedrop.tape
+    rm LMP67.mp3 2>/dev/null || true
 
 # Run tests
 test:
