@@ -121,17 +121,6 @@ jobs:
           go build -mod=mod -ldflags="-X main.version=$VERSION" -o jivedrop-${{ matrix.os }}-${{ matrix.arch }} ./cmd/jivedrop
           ls -lh jivedrop-${{ matrix.os }}-${{ matrix.arch }}
 
-      - name: Create checksum (Linux)
-        if: matrix.os == 'linux'
-        run: sha256sum jivedrop-${{ matrix.os }}-${{ matrix.arch }} > jivedrop-${{ matrix.os }}-${{ matrix.arch }}.sha256
-
-      - name: Create checksum (macOS)
-        if: matrix.os == 'darwin'
-        run: shasum -a 256 jivedrop-${{ matrix.os }}-${{ matrix.arch }} > jivedrop-${{ matrix.os }}-${{ matrix.arch }}.sha256
-
-      - name: Show checksum
-        run: cat jivedrop-${{ matrix.os }}-${{ matrix.arch }}.sha256
-
       - name: Upload Assets to Release
         uses: softprops/action-gh-release@v2
         env:
@@ -140,4 +129,3 @@ jobs:
           tag_name: ${{ steps.get_version.outputs.version }}
           files: |
             jivedrop-${{ matrix.os }}-${{ matrix.arch }}
-            jivedrop-${{ matrix.os }}-${{ matrix.arch }}.sha256
