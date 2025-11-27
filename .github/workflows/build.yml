@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -40,10 +42,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu
 
+      - name: Download ffmpeg-statigo libraries
+        env:
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          cd vendor/ffmpeg-statigo
+          go run ./cmd/download-lib
+
       - name: Run tests
+        if: matrix.goarch == 'amd64'
         env:
           CGO_ENABLED: 1
-        run: go test -v ./...
+        run: go test -mod=mod -v ./...
 
       - name: Build Linux ${{ matrix.goarch }}
         env:
@@ -52,7 +62,7 @@ jobs:
           CC: ${{ matrix.goarch == 'arm64' && 'aarch64-linux-gnu-gcc' || 'gcc' }}
         run: |
           echo "Building for linux/${{ matrix.goarch }} with CGO..."
-          go build -v -o jivedrop-linux-${{ matrix.goarch }} ./cmd/jivedrop
+          go build -mod=mod -v -o jivedrop-linux-${{ matrix.goarch }} ./cmd/jivedrop
           ls -lh jivedrop-linux-${{ matrix.goarch }}
 
       - name: Upload artifact
@@ -72,14 +82,24 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
 
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
           go-version: '1.24'
 
+      - name: Download ffmpeg-statigo libraries
+        env:
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          cd vendor/ffmpeg-statigo
+          go run ./cmd/download-lib
+
       - name: Run tests
-        run: go test -v ./...
+        if: matrix.goarch == 'arm64'
+        run: go test -mod=mod -v ./...
 
       - name: Build macOS ${{ matrix.goarch }}
         env:
@@ -87,7 +107,7 @@ jobs:
           CGO_ENABLED: 1
         run: |
           echo "Building for darwin/${{ matrix.goarch }} with CGO..."
-          go build -v -o jivedrop-darwin-${{ matrix.goarch }} ./cmd/jivedrop
+          go build -mod=mod -v -o jivedrop-darwin-${{ matrix.goarch }} ./cmd/jivedrop
           ls -lh jivedrop-darwin-${{ matrix.goarch }}
 
       - name: Upload artifact

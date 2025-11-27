@@ -28,7 +28,10 @@ func TestWriteTags(t *testing.T) {
 	info := TagInfo{
 		EpisodeNumber: "67",
 		Title:         "Mirrors, Motors and Makefiles",
+		Artist:        "Linux Matters",
+		Album:         "Linux Matters",
 		Date:          "2025-11",
+		Comment:       "https://linuxmatters.sh/",
 		CoverArtPath:  "", // Skip cover art for basic test
 	}
 

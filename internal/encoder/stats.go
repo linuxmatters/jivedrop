@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/csnewman/ffmpeg-go"
+	"github.com/linuxmatters/ffmpeg-statigo"
 )
 
 // FileStats holds podcast frontmatter statistics
