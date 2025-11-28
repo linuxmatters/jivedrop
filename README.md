@@ -1,6 +1,6 @@
 # Jivedrop 🪩
 
-> Drop your podcast .wav into a shiny MP3 with metadata, cover art, and all 🪩
+> Drop your podcast .wav into a shiny MP3 with metadata, cover art, and all
 
 ## The Groove
 

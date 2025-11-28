@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/linuxmatters/jivedrop/internal/encoder"
 )
@@ -22,6 +23,9 @@ type EncodingCompleteMsg struct {
 
 // EncodeModel is the Bubbletea model for encoding progress
 type EncodeModel struct {
+	// Progress bar component
+	progressBar progress.Model
+
 	// Encoder state
 	encoder      *encoder.Encoder
 	progressChan chan ProgressUpdate
@@ -48,7 +52,15 @@ type EncodeModel struct {
 func NewEncodeModel(enc *encoder.Encoder, outputMode string, outputBitrate int) *EncodeModel {
 	sampleRate, channels, format := enc.GetInputInfo()
 
+	// Disco ball gradient: indigo → white (cool shimmer effect)
+	p := progress.New(
+		progress.WithGradient(string(gradientIndigo), string(gradientWhite)),
+		progress.WithWidth(40),
+		progress.WithoutPercentage(),
+	)
+
 	return &EncodeModel{
+		progressBar:    p,
 		encoder:        enc,
 		progressChan:   make(chan ProgressUpdate, 10),
 		startTime:      time.Now(),

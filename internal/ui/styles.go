@@ -4,21 +4,30 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Color palette - matching Jivefire/Jivedrop aesthetic
+// Disco ball colour palette 🪩
+// Cool blues, cyans, purples and silvers - like light reflecting off a glitter ball
 var (
-	primaryColor   = lipgloss.Color("#A40000") // Jivedrop red
-	accentColor    = lipgloss.Color("#FFA500") // Orange/gold
-	successColor   = lipgloss.Color("#00AA00") // Green
-	mutedColor     = lipgloss.Color("#888888") // Gray
-	highlightColor = lipgloss.Color("#FFFF00") // Yellow
+	primaryColor   = lipgloss.Color("#00BFFF") // Deep sky blue - core disco reflection
+	accentColor    = lipgloss.Color("#00FFFF") // Electric cyan - sparkling highlights
+	successColor   = lipgloss.Color("#00CED1") // Dark turquoise - cool success
+	mutedColor     = lipgloss.Color("#778899") // Light slate gray
+	highlightColor = lipgloss.Color("#E0E0E0") // Silver/white - mirror reflection
 	textColor      = lipgloss.Color("#FFFFFF") // White
-	progressColor  = lipgloss.Color("#FFA500") // Orange for progress bar
+	errorColor     = lipgloss.Color("#DA70D6") // Orchid - distinct but cool
+	secondaryColor = lipgloss.Color("#9370DB") // Medium purple - disco purple tones
+	borderColor    = lipgloss.Color("#00BFFF") // Deep sky blue - glittery border
+
+	// Disco ball gradient colours (indigo → purple → cyan → white)
+	gradientIndigo = lipgloss.Color("#4B0082") // Deep indigo
+	gradientPurple = lipgloss.Color("#9370DB") // Medium purple
+	gradientCyan   = lipgloss.Color("#00FFFF") // Electric cyan
+	gradientWhite  = lipgloss.Color("#E0E0E0") // Silver/white
 )
 
 // Header style for section titles
 var headerStyle = lipgloss.NewStyle().
 	Bold(true).
-	Foreground(accentColor).
+	Foreground(primaryColor).
 	MarginBottom(1)
 
 // Accent style for highlighted values
@@ -34,7 +43,7 @@ var successStyle = lipgloss.NewStyle().
 // Error message style
 var errorStyle = lipgloss.NewStyle().
 	Bold(true).
-	Foreground(primaryColor)
+	Foreground(errorColor)
 
 // Highlight style for important values
 var highlightStyle = lipgloss.NewStyle().
@@ -56,13 +65,13 @@ var mutedStyle = lipgloss.NewStyle().
 
 // Progress bar style
 var progressBarStyle = lipgloss.NewStyle().
-	Foreground(progressColor).
+	Foreground(accentColor).
 	Bold(true)
 
 // Box style for framed content
 var boxStyle = lipgloss.NewStyle().
 	Border(lipgloss.RoundedBorder()).
-	BorderForeground(primaryColor).
+	BorderForeground(borderColor).
 	Padding(1, 2).
 	MarginTop(1).
 	MarginBottom(1)

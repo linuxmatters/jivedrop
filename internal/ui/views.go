@@ -13,9 +13,10 @@ func progressView(m *EncodeModel) string {
 	b.WriteString(headerStyle.Render("Encoding to MP3..."))
 	b.WriteString("\n\n")
 
-	// Progress bar
-	progress := m.calculateProgress()
-	b.WriteString(renderProgressBar(progress))
+	// Progress bar using bubbles/progress with gradient
+	progress := m.calculateProgress() / 100.0 // Convert to 0.0-1.0 range
+	b.WriteString(m.progressBar.ViewAs(progress))
+	b.WriteString(fmt.Sprintf("  %s", highlightStyle.Render(fmt.Sprintf("%3.0f%%", progress*100))))
 	b.WriteString("\n\n")
 
 	// Time and speed info
@@ -80,20 +81,4 @@ func errorView(err error) string {
 		errorStyle.Render("Error:"),
 		err.Error(),
 	)
-}
-
-// renderProgressBar renders a progress bar
-func renderProgressBar(progress float64) string {
-	const width = 40
-	filled := int(progress / 100 * width)
-
-	if filled > width {
-		filled = width
-	}
-
-	bar := strings.Repeat("━", filled) + strings.Repeat("─", width-filled)
-
-	percentage := fmt.Sprintf(" %3.0f%%", progress)
-
-	return progressBarStyle.Render(bar) + highlightStyle.Render(percentage)
 }

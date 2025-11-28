@@ -6,6 +6,7 @@ import (
 	"image/png"
 	"os"
 
+	"github.com/linuxmatters/jivedrop/internal/cli"
 	"golang.org/x/image/draw"
 )
 
@@ -86,9 +87,9 @@ func ScaleCoverArt(inputPath string) ([]byte, error) {
 
 	// Log scaling decision
 	if needsScaling {
-		fmt.Printf("  Cover: %dx%d %s scaled to %dx%d PNG\n", width, height, format, targetSize, targetSize)
+		cli.PrintCover(fmt.Sprintf("%dx%d %s scaled to %dx%d PNG", width, height, format, targetSize, targetSize))
 	} else {
-		fmt.Printf("  Cover: %dx%d %s (no scaling needed)\n", width, height, format)
+		cli.PrintCover(fmt.Sprintf("%dx%d %s (no scaling needed)", width, height, format))
 	}
 
 	return buf, nil

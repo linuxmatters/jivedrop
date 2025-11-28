@@ -61,7 +61,7 @@ Require ./jivedrop
 
 Set Shell "fish"
 Set FontSize 13
-Set Width 600
+Set Width 640
 Set Height 420
 Set Padding 8
 Set WindowBar ColorfulRight

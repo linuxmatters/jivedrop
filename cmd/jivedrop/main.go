@@ -308,16 +308,16 @@ func main() {
 	}
 
 	// Display encoding info
-	cli.PrintSuccess(fmt.Sprintf("Ready to encode: %s -> MP3", CLI.AudioFile))
-	cli.PrintInfo(fmt.Sprintf("Episode: %s - %s", episodeNum, episodeTitle))
+	cli.PrintSuccessLabel("Ready to encode:", fmt.Sprintf("%s -> MP3", CLI.AudioFile))
+	cli.PrintLabelValue("• Episode:", fmt.Sprintf("%s - %s", episodeNum, episodeTitle))
 	if mode == HugoMode {
-		cli.PrintInfo(fmt.Sprintf("Episode markdown: %s", CLI.EpisodeMD))
+		cli.PrintLabelValue("• Episode markdown:", CLI.EpisodeMD)
 	}
-	cli.PrintInfo(fmt.Sprintf("Output: %s", outputPath))
+	cli.PrintLabelValue("• Output:", outputPath)
 	if CLI.Stereo {
-		cli.PrintInfo("Encoding mode: Stereo 192kbps")
+		cli.PrintLabelValue("• Encoding mode:", "Stereo 192kbps")
 	} else {
-		cli.PrintInfo("Encoding mode: Mono 112kbps")
+		cli.PrintLabelValue("• Encoding mode:", "Mono 112kbps")
 	}
 
 	// Create encoder
@@ -346,7 +346,7 @@ func main() {
 	} else if channels > 2 {
 		channelMode = fmt.Sprintf("%dch", channels)
 	}
-	cli.PrintInfo(fmt.Sprintf("Input: %s %dHz %s", format, sampleRate, channelMode))
+	cli.PrintLabelValue("• Input:", fmt.Sprintf("%s %dHz %s", format, sampleRate, channelMode))
 
 	// Determine output bitrate and mode
 	outputBitrate := 112
@@ -395,7 +395,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cli.PrintSuccess(fmt.Sprintf("Complete: %s", outputPath))
+	cli.PrintSuccessLabel("Complete:", outputPath)
 
 	// Extract file statistics
 	stats, err := encoder.GetFileStats(outputPath)
@@ -406,8 +406,8 @@ func main() {
 
 	// Display podcast statistics (both modes)
 	fmt.Println("\nPodcast statistics:")
-	cli.PrintInfo(fmt.Sprintf("  podcast_duration: %s", stats.DurationString))
-	cli.PrintInfo(fmt.Sprintf("  podcast_bytes: %d", stats.FileSizeBytes))
+	cli.PrintLabelValue("•   podcast_duration:", stats.DurationString)
+	cli.PrintLabelValue("•   podcast_bytes:", fmt.Sprintf("%d", stats.FileSizeBytes))
 
 	// Only handle frontmatter updates in Hugo mode
 	if mode == StandaloneMode {

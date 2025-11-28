@@ -8,37 +8,37 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Custom help styles
+// Custom help styles - disco ball palette 🪩
 var (
 	helpTitleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#A40000")).
+			Foreground(lipgloss.Color("#00BFFF")). // Deep sky blue
 			MarginBottom(1)
 
 	helpModeStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#A40000"))
+			Foreground(lipgloss.Color("#00BFFF")) // Deep sky blue
 
 	helpDescStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFA500")).
+			Foreground(lipgloss.Color("#9370DB")). // Medium purple
 			Italic(true).
 			MarginBottom(1)
 
 	helpSectionStyle = lipgloss.NewStyle().
 				Bold(true).
-				Foreground(lipgloss.Color("#FFA500")).
+				Foreground(lipgloss.Color("#9370DB")). // Medium purple
 				MarginTop(1)
 
 	helpFlagStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#00AA00")).
+			Foreground(lipgloss.Color("#00FFFF")). // Electric cyan
 			Bold(true)
 
 	helpArgStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#00AAAA")).
+			Foreground(lipgloss.Color("#00CED1")). // Dark turquoise
 			Bold(true)
 
 	helpDefaultStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#888888")).
+				Foreground(lipgloss.Color("#778899")). // Light slate gray
 				Italic(true)
 )
 
@@ -50,7 +50,7 @@ func StyledHelpPrinter(options kong.HelpOptions) kong.HelpPrinter {
 		// Title and description
 		sb.WriteString(helpTitleStyle.Render("Jivedrop 🪩"))
 		sb.WriteString("\n")
-		sb.WriteString(helpDescStyle.Render("Drop your podcast audio into RSS-ready MP3s with embedded artwork and ID3 metadata."))
+		sb.WriteString(helpDescStyle.Render("Drop your podcast .wav into a shiny MP3 with metadata, cover art, and all."))
 		sb.WriteString("\n")
 
 		// Usage
