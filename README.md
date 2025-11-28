@@ -4,28 +4,28 @@
 
 ## The Groove
 
-Jivedrop takes your mixed podcast audio (WAV/FLAC) and outputs RSS-ready MP3 files—optimized encoding, embedded artwork, complete ID3 metadata. One command, distribution-ready output.
+Jivedrop takes your mixed podcast audio (WAV/FLAC) and outputs RSS-ready MP3 files with optimized encoding, embedded artwork, and complete ID3 metadata. One command, distribution-ready output.
+
+### Example Output
+
+<div align="center"><img alt="Jivedrop Demo" src=".github/jivedrop.gif" width="600" /></div>
 
 ### What's Cooking
 
-- 🎵 **CBR 112kbps mono MP3**—optimized for podcast distribution
+- 🎵 **CBR 112kbps mono MP3** optimized for podcast distribution
   - 🎚️ **44.1kHz resampling** with automatic mono downmix
   - 🎼 **20.5kHz lowpass filter** for clean high-frequency rolloff
-  - 🏆 **LAME quality preset 3**—excellent quality, reasonable file size
+  - 🏆 **LAME quality preset 3** excellent quality, reasonable file size
 - 🏷️ **Complete ID3v2 metadata**
   - Episode title, number, album, artist, date, comment
   - Embedded cover artwork (PNG)
   - Podcast enclosure stats for duration and bytes
 - ♊ **Dual-mode workflow**
-  - 📝 **Hugo mode**—read metadata from episode markdown
-  - 🎙️ **Standalone mode**—specify metadata via flags
+  - 📝 **Hugo mode** read metadata from episode markdown
+  - 🎙️ **Standalone mode** specify metadata via flags
 - 🚀 **Single binary** Just drop and encode
   - 🐧 **Linux** (amd64 and aarch64)
   - 🍏 **macOS** (x86 and Apple Silicon)
-
-### Example Output
-
-<div align="center"><img alt="Jivedrop Demo" src=".github/jivedrop.gif" width="600" /></div>
 
 ## Usage
 
@@ -123,14 +123,20 @@ Flags:
 
 ## Build
 
-Jivedrop uses [ffmpeg-statigo](https://github.com/linuxmatters/ffmpeg-statigo) for FFmpeg 8.0 static bindings.
+Jivedrop uses [ffmpeg-statigo](https://github.com/linuxmatters/ffmpeg-statigo) for FFmpeg static bindings.
 
 ```bash
-# First time setup (initialise submodule and download FFmpeg libraries)
+# Setup or update ffmpeg-statigo submodule and library
 just setup
 
 # Build and test
-just build      # Build binary
-just test       # Run tests
-just mp3        # Encode test audio
+just build        # Build binary
+just test         # Run tests
+just test-encoder # Test encoder
 ```
+
+## Why Jivedrop?
+
+FFmpeg's CLI can absolutely encode podcast-ready MP3s with metadata. But getting the incantation right with CBR encoding, mono downmix, ID3v2 tags, embedded artwork, correct lowpass filtering-requires a sprawling command line you'll never remember. And if your podcast uses Hugo? Now you're scripting frontmatter parsing on top.
+
+Jivedrop wraps the fiddly bits into a single binary that speaks Hugo natively. Drop your WAV, point at your episode markdown, get a distribution-ready MP3 with duration and byte counts ready to paste back into your frontmatter.
