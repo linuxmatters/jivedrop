@@ -126,8 +126,7 @@ Flags:
 Jivedrop uses [ffmpeg-statigo](https://github.com/linuxmatters/ffmpeg-statigo) for FFmpeg 8.0 static bindings.
 
 ```bash
-# First time setup (download FFmpeg libraries)
-git submodule update --init --recursive
+# First time setup (initialise submodule and download FFmpeg libraries)
 just setup
 
 # Build and test
@@ -135,7 +134,3 @@ just build      # Build binary
 just test       # Run tests
 just mp3        # Encode test audio
 ```
-
-## Specification
-
-The complete Jivedrop specification is available in [SPECIFICATION.md](docs/SPECIFICATION.md).

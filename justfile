@@ -5,21 +5,26 @@
 default:
     @just --list
 
-# Download ffmpeg-statigo libraries (run after clone/submodule init)
+# Download ffmpeg-statigo libraries and configure git for submodules
 setup:
     #!/usr/bin/env bash
+    echo "Configuring git for submodule-friendly pulls..."
+    git config pull.ff only
+    git config submodule.recurse true
+    echo "Initialising ffmpeg-statigo submodule..."
+    git submodule update --init --recursive
     echo "Downloading ffmpeg-statigo libraries..."
-    cd vendor/ffmpeg-statigo && go run ./cmd/download-lib
+    cd third_party/ffmpeg-statigo && go run ./cmd/download-lib
     echo "Setup complete!"
 
 # Update ffmpeg-statigo submodule
 update-ffmpeg:
     #!/usr/bin/env bash
     echo "Updating ffmpeg-statigo submodule..."
-    cd vendor/ffmpeg-statigo
+    cd third_party/ffmpeg-statigo
     git pull origin main
     cd ../..
-    git add vendor/ffmpeg-statigo
+    git add third_party/ffmpeg-statigo
     echo "Submodule updated"
     just setup
     echo "Don't forget to commit: git commit -m 'chore: update ffmpeg-statigo submodule'"
@@ -29,7 +34,7 @@ build:
     #!/usr/bin/env bash
     VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
     echo "Building jivedrop version: $VERSION"
-    CGO_ENABLED=1 go build -mod=mod -ldflags="-X main.version=$VERSION" -o jivedrop ./cmd/jivedrop
+    CGO_ENABLED=1 go build -ldflags="-X main.version=$VERSION" -o jivedrop ./cmd/jivedrop
 
 # Clean build artifacts
 clean:
@@ -54,8 +59,4 @@ vhs: build
 
 # Run tests
 test:
-    go test -mod=mod ./...
-
-# Get project orientation info
-onboard:
-    @cat docs/SPECIFICATION.md | grep -A 20 "^## Onboard"
+    go test ./...
