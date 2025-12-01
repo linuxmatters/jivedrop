@@ -14,13 +14,10 @@ var (
 	highlightColor = cli.HighlightColor
 	textColor      = cli.TextColor
 	errorColor     = cli.ErrorColor
-	secondaryColor = cli.SecondaryColor
 	borderColor    = cli.BorderColor
 
 	// Disco ball gradient colours
 	gradientIndigo = cli.GradientIndigo
-	gradientPurple = cli.GradientPurple
-	gradientCyan   = cli.GradientCyan
 	gradientWhite  = cli.GradientWhite
 )
 
@@ -62,11 +59,6 @@ var valueStyle = lipgloss.NewStyle().
 var mutedStyle = lipgloss.NewStyle().
 	Foreground(mutedColor).
 	Italic(true)
-
-// Progress bar style
-var progressBarStyle = lipgloss.NewStyle().
-	Foreground(accentColor).
-	Bold(true)
 
 // Box style for framed content
 var boxStyle = lipgloss.NewStyle().

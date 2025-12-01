@@ -59,15 +59,6 @@ var (
 			MarginBottom(1)
 )
 
-// PrintBanner prints the application banner
-func PrintBanner() {
-	banner := TitleStyle.Render("Jivedrop 🪩")
-	subtitle := SubtitleStyle.Render("Drop your podcast .wav into a shiny MP3 with metadata, cover art, and all.")
-	fmt.Println(banner)
-	fmt.Println(subtitle)
-	fmt.Println()
-}
-
 // PrintVersion prints version information
 func PrintVersion(version string) {
 	fmt.Println(TitleStyle.Render("Jivedrop 🪩"))
@@ -93,17 +84,6 @@ func PrintSuccess(message string) {
 // PrintInfo prints an informational message
 func PrintInfo(message string) {
 	fmt.Printf("%s %s\n", KeyStyle.Render("•"), message)
-}
-
-// PrintSection prints a section header
-func PrintSection(title string) {
-	fmt.Println()
-	fmt.Println(HeaderStyle.Render(title))
-}
-
-// PrintKeyValue prints a key-value pair
-func PrintKeyValue(key, value string) {
-	fmt.Printf("%s %s\n", KeyStyle.Render(key+":"), ValueStyle.Render(value))
 }
 
 // PrintLabelValue prints a label with muted style and a value
