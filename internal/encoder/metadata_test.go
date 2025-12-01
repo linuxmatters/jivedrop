@@ -620,6 +620,264 @@ Episode content.
 	}
 }
 
+func TestResolveCoverArtPath_RelativePath(t *testing.T) {
+	// Create a temporary directory structure:
+	// tmpDir/episode.md
+	// tmpDir/images/cover.png
+	tmpDir := t.TempDir()
+
+	// Create cover art file
+	imagesDir := filepath.Join(tmpDir, "images")
+	if err := os.MkdirAll(imagesDir, 0755); err != nil {
+		t.Fatalf("Failed to create images directory: %v", err)
+	}
+
+	coverPath := filepath.Join(imagesDir, "cover.png")
+	if err := os.WriteFile(coverPath, []byte("fake png"), 0644); err != nil {
+		t.Fatalf("Failed to create cover art file: %v", err)
+	}
+
+	// Create episode markdown file
+	markdownPath := filepath.Join(tmpDir, "episode.md")
+	markdownContent := `---
+episode: "1"
+title: "Test"
+episode_image: "./images/cover.png"
+---
+`
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+		t.Fatalf("Failed to create markdown file: %v", err)
+	}
+
+	// Test resolution
+	resolved, err := ResolveCoverArtPath(markdownPath, "./images/cover.png")
+	if err != nil {
+		t.Fatalf("ResolveCoverArtPath failed: %v", err)
+	}
+
+	absExpected, _ := filepath.Abs(coverPath)
+	if resolved != absExpected {
+		t.Errorf("Expected %s, got %s", absExpected, resolved)
+	}
+}
+
+func TestResolveCoverArtPath_RelativePathSubdirectory(t *testing.T) {
+	// Test relative path in nested subdirectory with ./ prefix
+	tmpDir := t.TempDir()
+
+	// Create nested structure:
+	// tmpDir/content/episodes/ep1.md
+	// tmpDir/content/episodes/cover.png
+	nestedDir := filepath.Join(tmpDir, "content", "episodes")
+
+	if err := os.MkdirAll(nestedDir, 0755); err != nil {
+		t.Fatalf("Failed to create nested directory: %v", err)
+	}
+
+	// Create cover art file in same directory as markdown
+	coverPath := filepath.Join(nestedDir, "cover.png")
+	if err := os.WriteFile(coverPath, []byte("fake png"), 0644); err != nil {
+		t.Fatalf("Failed to create cover art file: %v", err)
+	}
+
+	// Create episode markdown file
+	markdownPath := filepath.Join(nestedDir, "episode.md")
+	markdownContent := `---
+episode: "1"
+title: "Test"
+episode_image: "./cover.png"
+---
+`
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+		t.Fatalf("Failed to create markdown file: %v", err)
+	}
+
+	// Test resolution - ./ prefix means relative to markdown location
+	resolved, err := ResolveCoverArtPath(markdownPath, "./cover.png")
+	if err != nil {
+		t.Fatalf("ResolveCoverArtPath failed: %v", err)
+	}
+
+	absExpected, _ := filepath.Abs(coverPath)
+	if resolved != absExpected {
+		t.Errorf("Expected %s, got %s", absExpected, resolved)
+	}
+}
+
+func TestResolveCoverArtPath_AbsolutePath(t *testing.T) {
+	// Create a temporary Hugo project structure:
+	// tmpDir/static/img/cover.png
+	// tmpDir/content/episodes/episode.md
+	tmpDir := t.TempDir()
+
+	// Create Hugo static directory structure
+	staticDir := filepath.Join(tmpDir, "static", "img")
+	if err := os.MkdirAll(staticDir, 0755); err != nil {
+		t.Fatalf("Failed to create static directory: %v", err)
+	}
+
+	// Create cover art file
+	coverPath := filepath.Join(staticDir, "cover.png")
+	if err := os.WriteFile(coverPath, []byte("fake png"), 0644); err != nil {
+		t.Fatalf("Failed to create cover art file: %v", err)
+	}
+
+	// Create episode markdown file in nested content directory
+	contentDir := filepath.Join(tmpDir, "content", "episodes")
+	if err := os.MkdirAll(contentDir, 0755); err != nil {
+		t.Fatalf("Failed to create content directory: %v", err)
+	}
+
+	markdownPath := filepath.Join(contentDir, "episode.md")
+	markdownContent := `---
+episode: "1"
+title: "Test"
+episode_image: "/img/cover.png"
+---
+`
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+		t.Fatalf("Failed to create markdown file: %v", err)
+	}
+
+	// Test resolution - should walk up from content/episodes to find static/
+	resolved, err := ResolveCoverArtPath(markdownPath, "/img/cover.png")
+	if err != nil {
+		t.Fatalf("ResolveCoverArtPath failed: %v", err)
+	}
+
+	absExpected, _ := filepath.Abs(coverPath)
+	if resolved != absExpected {
+		t.Errorf("Expected %s, got %s", absExpected, resolved)
+	}
+}
+
+func TestResolveCoverArtPath_AbsolutePathNested(t *testing.T) {
+	// Test absolute path with nested static subdirectories
+	tmpDir := t.TempDir()
+
+	// Create structure:
+	// tmpDir/static/media/podcasts/cover.png
+	// tmpDir/content/blog/post.md
+	staticDir := filepath.Join(tmpDir, "static", "media", "podcasts")
+	if err := os.MkdirAll(staticDir, 0755); err != nil {
+		t.Fatalf("Failed to create static directory: %v", err)
+	}
+
+	coverPath := filepath.Join(staticDir, "cover.png")
+	if err := os.WriteFile(coverPath, []byte("fake png"), 0644); err != nil {
+		t.Fatalf("Failed to create cover art file: %v", err)
+	}
+
+	contentDir := filepath.Join(tmpDir, "content", "blog")
+	if err := os.MkdirAll(contentDir, 0755); err != nil {
+		t.Fatalf("Failed to create content directory: %v", err)
+	}
+
+	markdownPath := filepath.Join(contentDir, "post.md")
+	markdownContent := `---
+episode: "1"
+title: "Test"
+episode_image: "/media/podcasts/cover.png"
+---
+`
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+		t.Fatalf("Failed to create markdown file: %v", err)
+	}
+
+	// Test resolution
+	resolved, err := ResolveCoverArtPath(markdownPath, "/media/podcasts/cover.png")
+	if err != nil {
+		t.Fatalf("ResolveCoverArtPath failed: %v", err)
+	}
+
+	absExpected, _ := filepath.Abs(coverPath)
+	if resolved != absExpected {
+		t.Errorf("Expected %s, got %s", absExpected, resolved)
+	}
+}
+
+func TestResolveCoverArtPath_FileNotFound_Relative(t *testing.T) {
+	// Test error when relative path file does not exist
+	tmpDir := t.TempDir()
+
+	markdownPath := filepath.Join(tmpDir, "episode.md")
+	markdownContent := `---
+episode: "1"
+title: "Test"
+episode_image: "./missing.png"
+---
+`
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+		t.Fatalf("Failed to create markdown file: %v", err)
+	}
+
+	// Test resolution - should fail
+	_, err := ResolveCoverArtPath(markdownPath, "./missing.png")
+	if err == nil {
+		t.Error("Expected error for missing file, got nil")
+	}
+	if !contains(err.Error(), "cover art not found") {
+		t.Errorf("Expected 'cover art not found' error, got: %v", err)
+	}
+}
+
+func TestResolveCoverArtPath_FileNotFound_Absolute(t *testing.T) {
+	// Test error when absolute path file does not exist
+	tmpDir := t.TempDir()
+
+	// Create Hugo structure without the cover file
+	staticDir := filepath.Join(tmpDir, "static")
+	if err := os.MkdirAll(staticDir, 0755); err != nil {
+		t.Fatalf("Failed to create static directory: %v", err)
+	}
+
+	markdownPath := filepath.Join(tmpDir, "episode.md")
+	markdownContent := `---
+episode: "1"
+title: "Test"
+episode_image: "/img/missing.png"
+---
+`
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+		t.Fatalf("Failed to create markdown file: %v", err)
+	}
+
+	// Test resolution - should fail
+	_, err := ResolveCoverArtPath(markdownPath, "/img/missing.png")
+	if err == nil {
+		t.Error("Expected error for missing file, got nil")
+	}
+	if !contains(err.Error(), "cover art not found") {
+		t.Errorf("Expected 'cover art not found' error, got: %v", err)
+	}
+}
+
+func TestResolveCoverArtPath_NoProjectRoot(t *testing.T) {
+	// Test error when no Hugo project root (no static/ directory) is found
+	tmpDir := t.TempDir()
+
+	// Create markdown file without any static/ directory in parent hierarchy
+	markdownPath := filepath.Join(tmpDir, "episode.md")
+	markdownContent := `---
+episode: "1"
+title: "Test"
+episode_image: "/img/cover.png"
+---
+`
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+		t.Fatalf("Failed to create markdown file: %v", err)
+	}
+
+	// Test resolution - should fail
+	_, err := ResolveCoverArtPath(markdownPath, "/img/cover.png")
+	if err == nil {
+		t.Error("Expected error for missing project root, got nil")
+	}
+	if !contains(err.Error(), "could not find Hugo project root") {
+		t.Errorf("Expected 'could not find Hugo project root' error, got: %v", err)
+	}
+}
+
 // Helper function
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && (s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || findSubstring(s, substr)))
