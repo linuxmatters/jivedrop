@@ -8,37 +8,37 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Custom help styles - disco ball palette 🪩
+// Custom help styles using shared disco ball palette 🪩
 var (
 	helpTitleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#00BFFF")). // Deep sky blue
+			Foreground(PrimaryColor).
 			MarginBottom(1)
 
 	helpModeStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#00BFFF")) // Deep sky blue
+			Foreground(PrimaryColor)
 
 	helpDescStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#9370DB")). // Medium purple
+			Foreground(SecondaryColor).
 			Italic(true).
 			MarginBottom(1)
 
 	helpSectionStyle = lipgloss.NewStyle().
 				Bold(true).
-				Foreground(lipgloss.Color("#9370DB")). // Medium purple
+				Foreground(SecondaryColor).
 				MarginTop(1)
 
 	helpFlagStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#00FFFF")). // Electric cyan
+			Foreground(AccentColor).
 			Bold(true)
 
 	helpArgStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#00CED1")). // Dark turquoise
+			Foreground(SuccessColor).
 			Bold(true)
 
 	helpDefaultStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#778899")). // Light slate gray
+				Foreground(MutedColor).
 				Italic(true)
 )
 

@@ -2,26 +2,26 @@ package ui
 
 import (
 	"github.com/charmbracelet/lipgloss"
+	"github.com/linuxmatters/jivedrop/internal/cli"
 )
 
-// Disco ball colour palette 🪩
-// Cool blues, cyans, purples and silvers - like light reflecting off a glitter ball
+// Import shared colour palette from cli package
 var (
-	primaryColor   = lipgloss.Color("#00BFFF") // Deep sky blue - core disco reflection
-	accentColor    = lipgloss.Color("#00FFFF") // Electric cyan - sparkling highlights
-	successColor   = lipgloss.Color("#00CED1") // Dark turquoise - cool success
-	mutedColor     = lipgloss.Color("#778899") // Light slate gray
-	highlightColor = lipgloss.Color("#E0E0E0") // Silver/white - mirror reflection
-	textColor      = lipgloss.Color("#FFFFFF") // White
-	errorColor     = lipgloss.Color("#DA70D6") // Orchid - distinct but cool
-	secondaryColor = lipgloss.Color("#9370DB") // Medium purple - disco purple tones
-	borderColor    = lipgloss.Color("#00BFFF") // Deep sky blue - glittery border
+	primaryColor   = cli.PrimaryColor
+	accentColor    = cli.AccentColor
+	successColor   = cli.SuccessColor
+	mutedColor     = cli.MutedColor
+	highlightColor = cli.HighlightColor
+	textColor      = cli.TextColor
+	errorColor     = cli.ErrorColor
+	secondaryColor = cli.SecondaryColor
+	borderColor    = cli.BorderColor
 
-	// Disco ball gradient colours (indigo → purple → cyan → white)
-	gradientIndigo = lipgloss.Color("#4B0082") // Deep indigo
-	gradientPurple = lipgloss.Color("#9370DB") // Medium purple
-	gradientCyan   = lipgloss.Color("#00FFFF") // Electric cyan
-	gradientWhite  = lipgloss.Color("#E0E0E0") // Silver/white
+	// Disco ball gradient colours
+	gradientIndigo = cli.GradientIndigo
+	gradientPurple = cli.GradientPurple
+	gradientCyan   = cli.GradientCyan
+	gradientWhite  = cli.GradientWhite
 )
 
 // Header style for section titles
