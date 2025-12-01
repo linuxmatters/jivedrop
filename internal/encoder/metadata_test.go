@@ -3,6 +3,7 @@ package encoder
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -171,6 +172,454 @@ Episode content.
 	}
 }
 
+// TestUpdateFrontmatter_InsertBothFields tests inserting missing podcast_duration and podcast_bytes
+func TestUpdateFrontmatter_InsertBothFields(t *testing.T) {
+	content := `---
+episode: "42"
+title: "Test Episode"
+Date: 2025-11-09T00:00:00Z
+episode_image: "/img/test.png"
+---
+
+Episode content goes here.
+More content.
+`
+
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	// Update frontmatter with both fields missing
+	err := UpdateFrontmatter(tmpFile, "01:23:45", 5555555)
+	if err != nil {
+		t.Fatalf("UpdateFrontmatter failed: %v", err)
+	}
+
+	// Read the updated file
+	updated, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("Failed to read updated file: %v", err)
+	}
+
+	updatedContent := string(updated)
+
+	// Verify fields were added before closing delimiter
+	if !contains(updatedContent, "podcast_duration: 01:23:45") {
+		t.Error("podcast_duration field not found in updated frontmatter")
+	}
+	if !contains(updatedContent, "podcast_bytes: 5555555") {
+		t.Error("podcast_bytes field not found in updated frontmatter")
+	}
+
+	// Verify fields are before the closing delimiter
+	lines := splitLines(updatedContent)
+	closingDelimiterIdx := -1
+	durationIdx := -1
+	bytesIdx := -1
+
+	for i, line := range lines {
+		if i > 0 && i < len(lines)-1 && line == "---" {
+			closingDelimiterIdx = i
+		}
+		if contains(line, "podcast_duration:") {
+			durationIdx = i
+		}
+		if contains(line, "podcast_bytes:") {
+			bytesIdx = i
+		}
+	}
+
+	if closingDelimiterIdx < 0 {
+		t.Error("Closing delimiter not found")
+	} else {
+		if durationIdx < 0 || durationIdx >= closingDelimiterIdx {
+			t.Error("podcast_duration not positioned before closing delimiter")
+		}
+		if bytesIdx < 0 || bytesIdx >= closingDelimiterIdx {
+			t.Error("podcast_bytes not positioned before closing delimiter")
+		}
+	}
+
+	// Verify episode body is preserved
+	if !contains(updatedContent, "Episode content goes here.") {
+		t.Error("Episode content was corrupted")
+	}
+	if !contains(updatedContent, "More content.") {
+		t.Error("Episode content was corrupted")
+	}
+}
+
+// TestUpdateFrontmatter_UpdateExistingFields tests updating fields that already exist
+func TestUpdateFrontmatter_UpdateExistingFields(t *testing.T) {
+	content := `---
+episode: "42"
+title: "Test Episode"
+Date: 2025-11-09T00:00:00Z
+episode_image: "/img/test.png"
+podcast_duration: "00:10:00"
+podcast_bytes: 1000000
+---
+
+Episode content.
+`
+
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	// Update with new values
+	err := UpdateFrontmatter(tmpFile, "01:23:45", 5555555)
+	if err != nil {
+		t.Fatalf("UpdateFrontmatter failed: %v", err)
+	}
+
+	// Read the updated file
+	updated, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("Failed to read updated file: %v", err)
+	}
+
+	updatedContent := string(updated)
+
+	// Verify fields were updated with new values
+	if !contains(updatedContent, "podcast_duration: 01:23:45") {
+		t.Error("podcast_duration not updated correctly")
+	}
+	if !contains(updatedContent, "podcast_bytes: 5555555") {
+		t.Error("podcast_bytes not updated correctly")
+	}
+
+	// Verify old values are gone
+	if contains(updatedContent, "podcast_duration: 00:10:00") {
+		t.Error("Old podcast_duration value still present")
+	}
+	if contains(updatedContent, "podcast_bytes: 1000000") {
+		t.Error("Old podcast_bytes value still present")
+	}
+}
+
+// TestUpdateFrontmatter_InsertOneFieldUpdateOther tests inserting one field and updating the other
+func TestUpdateFrontmatter_InsertOneFieldUpdateOther(t *testing.T) {
+	content := `---
+episode: "42"
+title: "Test Episode"
+Date: 2025-11-09T00:00:00Z
+episode_image: "/img/test.png"
+podcast_duration: "00:05:00"
+---
+
+Episode content.
+`
+
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	// Update - should update duration and insert bytes
+	err := UpdateFrontmatter(tmpFile, "00:15:00", 3333333)
+	if err != nil {
+		t.Fatalf("UpdateFrontmatter failed: %v", err)
+	}
+
+	// Read the updated file
+	updated, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("Failed to read updated file: %v", err)
+	}
+
+	updatedContent := string(updated)
+
+	// Verify both fields are now correct
+	if !contains(updatedContent, "podcast_duration: 00:15:00") {
+		t.Error("podcast_duration not updated")
+	}
+	if !contains(updatedContent, "podcast_bytes: 3333333") {
+		t.Error("podcast_bytes not inserted")
+	}
+}
+
+// TestUpdateFrontmatter_PreserveFrontmatterFields tests that other frontmatter fields are preserved
+func TestUpdateFrontmatter_PreserveFrontmatterFields(t *testing.T) {
+	content := `---
+episode: "42"
+title: "Test Episode"
+summary: "A test episode"
+Date: 2025-11-09T00:00:00Z
+episode_image: "/img/test.png"
+hosts:
+ - alice
+ - bob
+---
+
+Episode content.
+`
+
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	// Update frontmatter
+	err := UpdateFrontmatter(tmpFile, "00:20:00", 4444444)
+	if err != nil {
+		t.Fatalf("UpdateFrontmatter failed: %v", err)
+	}
+
+	// Read the updated file
+	updated, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("Failed to read updated file: %v", err)
+	}
+
+	updatedContent := string(updated)
+
+	// Verify existing fields are preserved
+	if !contains(updatedContent, "episode: \"42\"") {
+		t.Error("episode field not preserved")
+	}
+	if !contains(updatedContent, "title: \"Test Episode\"") {
+		t.Error("title field not preserved")
+	}
+	if !contains(updatedContent, "summary: \"A test episode\"") {
+		t.Error("summary field not preserved")
+	}
+	if !contains(updatedContent, "Date: 2025-11-09T00:00:00Z") {
+		t.Error("Date field not preserved")
+	}
+	if !contains(updatedContent, "hosts:") {
+		t.Error("hosts field not preserved")
+	}
+	if !contains(updatedContent, " - alice") {
+		t.Error("hosts list not preserved")
+	}
+	if !contains(updatedContent, " - bob") {
+		t.Error("hosts list not preserved")
+	}
+}
+
+// TestUpdateFrontmatter_InvalidFrontmatter tests error handling for invalid frontmatter
+func TestUpdateFrontmatter_InvalidFrontmatter(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		wantErr bool
+	}{
+		{
+			name:    "no frontmatter",
+			content: "Just plain content without frontmatter\n",
+			wantErr: true,
+		},
+		{
+			name: "missing closing delimiter",
+			content: `---
+episode: "42"
+title: "Test"
+episode_image: "/img/test.png"
+No closing delimiter
+`,
+			wantErr: true,
+		},
+		{
+			name: "only opening delimiter",
+			content: `---
+Some content without proper closing
+`,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			tmpFile := filepath.Join(tmpDir, "test.md")
+			if err := os.WriteFile(tmpFile, []byte(tt.content), 0644); err != nil {
+				t.Fatalf("Failed to create test file: %v", err)
+			}
+
+			err := UpdateFrontmatter(tmpFile, "00:10:00", 1000000)
+			if !tt.wantErr && err != nil {
+				t.Errorf("UpdateFrontmatter() unexpected error: %v", err)
+			}
+			if tt.wantErr && err == nil {
+				t.Error("UpdateFrontmatter() expected error, got nil")
+			}
+		})
+	}
+}
+
+// TestUpdateFrontmatter_LargeFileSize tests with large file size values
+func TestUpdateFrontmatter_LargeFileSize(t *testing.T) {
+	content := `---
+episode: "42"
+title: "Test Episode"
+Date: 2025-11-09T00:00:00Z
+episode_image: "/img/test.png"
+---
+
+Episode content.
+`
+
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	// Use a large file size (100 MB)
+	largeSize := int64(100 * 1024 * 1024)
+
+	err := UpdateFrontmatter(tmpFile, "54:32:10", largeSize)
+	if err != nil {
+		t.Fatalf("UpdateFrontmatter with large size failed: %v", err)
+	}
+
+	// Read the updated file
+	updated, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("Failed to read updated file: %v", err)
+	}
+
+	updatedContent := string(updated)
+
+	if !contains(updatedContent, "podcast_duration: 54:32:10") {
+		t.Error("Duration not updated correctly")
+	}
+	if !contains(updatedContent, "podcast_bytes: 104857600") {
+		t.Error("Large file size not updated correctly")
+	}
+}
+
+// TestUpdateFrontmatter_ZeroDuration tests with zero duration
+func TestUpdateFrontmatter_ZeroDuration(t *testing.T) {
+	content := `---
+episode: "0"
+title: "Pilot"
+Date: 2025-11-09T00:00:00Z
+episode_image: "/img/test.png"
+---
+
+Episode content.
+`
+
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	// Edge case: zero duration
+	err := UpdateFrontmatter(tmpFile, "00:00:00", 0)
+	if err != nil {
+		t.Fatalf("UpdateFrontmatter with zero values failed: %v", err)
+	}
+
+	// Read the updated file
+	updated, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("Failed to read updated file: %v", err)
+	}
+
+	updatedContent := string(updated)
+
+	if !contains(updatedContent, "podcast_duration: 00:00:00") {
+		t.Error("Zero duration not handled correctly")
+	}
+	if !contains(updatedContent, "podcast_bytes: 0") {
+		t.Error("Zero bytes not handled correctly")
+	}
+}
+
+// TestUpdateFrontmatter_FileWithNoBody tests frontmatter-only file
+func TestUpdateFrontmatter_FileWithNoBody(t *testing.T) {
+	content := `---
+episode: "42"
+title: "Test Episode"
+Date: 2025-11-09T00:00:00Z
+episode_image: "/img/test.png"
+---`
+
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	err := UpdateFrontmatter(tmpFile, "00:10:00", 1000000)
+	if err != nil {
+		t.Fatalf("UpdateFrontmatter failed: %v", err)
+	}
+
+	// Read the updated file
+	updated, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("Failed to read updated file: %v", err)
+	}
+
+	updatedContent := string(updated)
+
+	// Verify fields were added
+	if !contains(updatedContent, "podcast_duration: 00:10:00") {
+		t.Error("podcast_duration not added")
+	}
+	if !contains(updatedContent, "podcast_bytes: 1000000") {
+		t.Error("podcast_bytes not added")
+	}
+}
+
+// TestUpdateFrontmatter_MultilineFieldValues tests with multiline YAML fields
+func TestUpdateFrontmatter_MultilineFieldValues(t *testing.T) {
+	content := `---
+episode: "42"
+title: "Test Episode"
+summary: |
+  This is a multiline
+  summary that spans
+  multiple lines
+Date: 2025-11-09T00:00:00Z
+episode_image: "/img/test.png"
+---
+
+Episode content.
+`
+
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	err := UpdateFrontmatter(tmpFile, "00:25:00", 2222222)
+	if err != nil {
+		t.Fatalf("UpdateFrontmatter failed: %v", err)
+	}
+
+	// Read the updated file
+	updated, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("Failed to read updated file: %v", err)
+	}
+
+	updatedContent := string(updated)
+
+	// Verify fields were added and multiline content preserved
+	if !contains(updatedContent, "podcast_duration: 00:25:00") {
+		t.Error("podcast_duration not added")
+	}
+	if !contains(updatedContent, "This is a multiline") {
+		t.Error("Multiline content was corrupted")
+	}
+	if !contains(updatedContent, "multiple lines") {
+		t.Error("Multiline content was corrupted")
+	}
+}
+
 // Helper function
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && (s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || findSubstring(s, substr)))
@@ -183,4 +632,9 @@ func findSubstring(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+// splitLines splits content by newline for position analysis
+func splitLines(content string) []string {
+	return strings.Split(content, "\n")
 }
