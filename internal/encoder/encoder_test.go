@@ -3,6 +3,7 @@ package encoder
 import (
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 )
 
@@ -303,4 +304,112 @@ func TestEncoder_CloseSafety(t *testing.T) {
 			enc.Close()
 		})
 	}
+}
+
+// TestEncoder_ProgressCallback verifies progress callback receives valid values
+func TestEncoder_ProgressCallback(t *testing.T) {
+	inputPath := "../../testdata/LMP0.flac"
+	if _, err := os.Stat(inputPath); os.IsNotExist(err) {
+		t.Skipf("Test file not found: %s", inputPath)
+	}
+
+	tmpDir := t.TempDir()
+	outputPath := filepath.Join(tmpDir, "test.mp3")
+
+	// Create and initialize encoder
+	enc, err := New(Config{
+		InputPath:  inputPath,
+		OutputPath: outputPath,
+		Stereo:     false,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create encoder: %v", err)
+	}
+	defer enc.Close()
+
+	if err := enc.Initialize(); err != nil {
+		t.Fatalf("Failed to initialize encoder: %v", err)
+	}
+
+	// Get total samples from encoder state
+	totalSamples := enc.totalSamples
+	if totalSamples == 0 {
+		t.Skip("Could not determine total samples from input file")
+	}
+
+	// Track all progress updates
+	var progressUpdates []struct {
+		samplesProcessed int64
+		totalSamples     int64
+	}
+	var mu sync.Mutex
+
+	progressCb := func(samplesProcessed, totalSamples int64) {
+		mu.Lock()
+		defer mu.Unlock()
+		progressUpdates = append(progressUpdates, struct {
+			samplesProcessed int64
+			totalSamples     int64
+		}{samplesProcessed, totalSamples})
+	}
+
+	// Encode with progress callback
+	if err := enc.Encode(progressCb); err != nil {
+		t.Fatalf("Encoding failed: %v", err)
+	}
+
+	if len(progressUpdates) == 0 {
+		t.Skip("No progress updates received (file may be too small)")
+	}
+
+	// Verify output file was created
+	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
+		t.Fatalf("Output file not created: %v", err)
+	}
+
+	// Verify each progress update
+	for i, update := range progressUpdates {
+		// Check totalSamples is consistent
+		if update.totalSamples != totalSamples {
+			t.Errorf("Update %d: totalSamples mismatch - expected %d, got %d",
+				i, totalSamples, update.totalSamples)
+		}
+
+		// Check samplesProcessed is within valid range [0, totalSamples]
+		if update.samplesProcessed < 0 {
+			t.Errorf("Update %d: samplesProcessed is negative: %d", i, update.samplesProcessed)
+		}
+		if update.samplesProcessed > totalSamples {
+			t.Errorf("Update %d: samplesProcessed (%d) exceeds totalSamples (%d)",
+				i, update.samplesProcessed, totalSamples)
+		}
+
+		// Check monotonically increasing (each update >= previous)
+		if i > 0 {
+			prevSamples := progressUpdates[i-1].samplesProcessed
+			if update.samplesProcessed < prevSamples {
+				t.Errorf("Update %d: progress decreased from %d to %d",
+					i, prevSamples, update.samplesProcessed)
+			}
+		}
+	}
+
+	// Verify final update reaches or nearly reaches totalSamples
+	lastUpdate := progressUpdates[len(progressUpdates)-1]
+	if lastUpdate.samplesProcessed < totalSamples {
+		// Allow small tolerance (within 1% or 100 samples, whichever is larger)
+		tolerance := int64(totalSamples / 100)
+		if tolerance < 100 {
+			tolerance = 100
+		}
+		if totalSamples-lastUpdate.samplesProcessed > tolerance {
+			t.Errorf("Final update does not reach totalSamples: %d vs %d (diff: %d)",
+				lastUpdate.samplesProcessed, totalSamples,
+				totalSamples-lastUpdate.samplesProcessed)
+		}
+	}
+
+	t.Logf("Progress callback received %d updates, samples: %d -> %d of %d",
+		len(progressUpdates), progressUpdates[0].samplesProcessed,
+		lastUpdate.samplesProcessed, totalSamples)
 }
