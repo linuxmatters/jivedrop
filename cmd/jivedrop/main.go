@@ -26,6 +26,13 @@ const (
 	StandaloneMode
 )
 
+// Hugo mode defaults for Linux Matters podcast
+const (
+	HugoDefaultArtist  = "Linux Matters"
+	HugoDefaultComment = "https://linuxmatters.sh"
+	HugoDefaultPrefix  = "LMP"
+)
+
 var CLI struct {
 	AudioFile string `arg:"" name:"audio-file" help:"Path to audio file (WAV, FLAC)" optional:""`
 	EpisodeMD string `arg:"" name:"episode-md" help:"Path to episode markdown file (Hugo mode)" optional:""`
@@ -113,13 +120,13 @@ func sanitiseForFilename(s string) string {
 func generateFilename(mode WorkflowMode, num, artist string) string {
 	if mode == HugoMode {
 		// Hugo mode: LMP{num}.mp3 unless artist is overridden
-		if CLI.Artist != "" && CLI.Artist != "Linux Matters" {
+		if CLI.Artist != "" && CLI.Artist != HugoDefaultArtist {
 			// Custom artist provided
 			sanitisedArtist := sanitiseForFilename(artist)
 			return fmt.Sprintf("%s-%s.mp3", sanitisedArtist, num)
 		}
 		// Default Linux Matters format
-		return fmt.Sprintf("LMP%s.mp3", num)
+		return fmt.Sprintf("%s%s.mp3", HugoDefaultPrefix, num)
 	}
 
 	// Standalone mode: {artist}-{num}.mp3 or episode-{num}.mp3 fallback
@@ -247,8 +254,8 @@ func main() {
 		// Apply Hugo defaults
 		episodeNum = hugoMetadata.Episode
 		episodeTitle = hugoMetadata.Title
-		artist = "Linux Matters"
-		comment = "https://linuxmatters.sh"
+		artist = HugoDefaultArtist
+		comment = HugoDefaultComment
 		date = encoder.FormatDateForID3(hugoMetadata.Date)
 
 		// Allow flag overrides
