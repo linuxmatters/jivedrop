@@ -1,6 +1,7 @@
 package id3
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/png"
@@ -77,10 +78,9 @@ func ScaleCoverArt(inputPath string) ([]byte, error) {
 	// Re-encode to PNG
 	// Note: We always use PNG regardless of input format to ensure
 	// consistent quality in ID3 tags
-	var buf []byte
-	pngBuf := &bytesBuffer{buf: &buf}
+	var buf bytes.Buffer
 
-	err = png.Encode(pngBuf, finalImg)
+	err = png.Encode(&buf, finalImg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode scaled image: %w", err)
 	}
@@ -92,15 +92,5 @@ func ScaleCoverArt(inputPath string) ([]byte, error) {
 		cli.PrintCover(fmt.Sprintf("%dx%d %s (no scaling needed)", width, height, format))
 	}
 
-	return buf, nil
-}
-
-// bytesBuffer implements io.Writer for capturing PNG encoding output
-type bytesBuffer struct {
-	buf *[]byte
-}
-
-func (b *bytesBuffer) Write(p []byte) (n int, err error) {
-	*b.buf = append(*b.buf, p...)
-	return len(p), nil
+	return buf.Bytes(), nil
 }
