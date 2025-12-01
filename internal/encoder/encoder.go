@@ -31,6 +31,7 @@ type Encoder struct {
 	samplesRead  int64
 	totalSamples int64
 	nextPts      int64 // Track PTS for output frames
+	closed       bool  // Track if Close() has been called to prevent double-free
 }
 
 // Config holds encoder configuration
@@ -550,6 +551,12 @@ func (e *Encoder) flushEncoder(outStream *ffmpeg.AVStream) error {
 
 // Close releases all resources
 func (e *Encoder) Close() {
+	// Prevent double-close which could cause issues with already-freed FFmpeg resources
+	if e.closed {
+		return
+	}
+	e.closed = true
+
 	if e.filteredFrame != nil {
 		ffmpeg.AVFrameFree(&e.filteredFrame)
 	}

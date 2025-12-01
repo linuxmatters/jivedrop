@@ -219,3 +219,88 @@ func TestEncoder_OutputExists(t *testing.T) {
 		t.Error("Output file does not appear to have been overwritten")
 	}
 }
+
+// TestEncoder_CloseSafety verifies that Close() handles edge cases without panicking
+func TestEncoder_CloseSafety(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name      string
+		setupFunc func() *Encoder
+	}{
+		{
+			name: "close before initialize",
+			setupFunc: func() *Encoder {
+				enc, err := New(Config{
+					InputPath:  "../../testdata/LMP0.flac",
+					OutputPath: filepath.Join(tmpDir, "test1.mp3"),
+					Stereo:     false,
+				})
+				if err != nil {
+					t.Fatalf("Failed to create encoder: %v", err)
+				}
+				// Don't call Initialize - Close should handle nil pointers gracefully
+				return enc
+			},
+		},
+		{
+			name: "double close",
+			setupFunc: func() *Encoder {
+				enc, err := New(Config{
+					InputPath:  "../../testdata/LMP0.flac",
+					OutputPath: filepath.Join(tmpDir, "test2.mp3"),
+					Stereo:     false,
+				})
+				if err != nil {
+					t.Fatalf("Failed to create encoder: %v", err)
+				}
+
+				if err := enc.Initialize(); err != nil {
+					t.Fatalf("Failed to initialize encoder: %v", err)
+				}
+
+				// First close
+				enc.Close()
+				// Second close should not panic even though resources are freed
+				return enc
+			},
+		},
+		{
+			name: "close after failed initialize",
+			setupFunc: func() *Encoder {
+				// Use invalid input file to cause Initialize to fail
+				enc, err := New(Config{
+					InputPath:  "/nonexistent/invalid.flac",
+					OutputPath: filepath.Join(tmpDir, "test3.mp3"),
+					Stereo:     false,
+				})
+				if err != nil {
+					t.Fatalf("Failed to create encoder: %v", err)
+				}
+
+				// Initialize will fail, leaving partial resources
+				_ = enc.Initialize()
+				// Close should still work safely even after failed Initialize
+				return enc
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Use a separate test to verify that Close() can be called
+			// multiple times or after partial initialization without panicking
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("Close() panicked: %v", r)
+				}
+			}()
+
+			enc := tt.setupFunc()
+			// Call Close a second time for the "double close" scenario
+			// For other scenarios, this is extra safety verification
+			enc.Close()
+			enc.Close()
+		})
+	}
+}
