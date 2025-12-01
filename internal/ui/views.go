@@ -3,6 +3,8 @@ package ui
 import (
 	"fmt"
 	"strings"
+
+	"github.com/linuxmatters/jivedrop/internal/encoder"
 )
 
 // progressView renders the encoding progress UI
@@ -40,7 +42,7 @@ func progressView(m *EncodeModel) string {
 	inputSpec := fmt.Sprintf("%s %.1fkHz %s",
 		m.inputFormat,
 		float64(m.inputRate)/1000.0,
-		formatInputChannels(m.inputChannels),
+		encoder.FormatChannelMode(m.inputChannels),
 	)
 
 	outputSpec := fmt.Sprintf("MP3 %.1fkHz %s CBR %dkbps",

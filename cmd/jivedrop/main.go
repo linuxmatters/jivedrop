@@ -364,12 +364,7 @@ func main() {
 
 	// Get input info
 	sampleRate, channels, format := enc.GetInputInfo()
-	channelMode := "mono"
-	if channels == 2 {
-		channelMode = "stereo"
-	} else if channels > 2 {
-		channelMode = fmt.Sprintf("%dch", channels)
-	}
+	channelMode := encoder.FormatChannelMode(channels)
 	cli.PrintLabelValue("• Input:", fmt.Sprintf("%s %dHz %s", format, sampleRate, channelMode))
 
 	// Determine output bitrate and mode

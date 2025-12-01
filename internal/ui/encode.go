@@ -228,18 +228,6 @@ func formatDurationHuman(d time.Duration) string {
 	return fmt.Sprintf("%dm %ds", m, s)
 }
 
-// formatInputChannels formats channel count as "mono", "stereo", etc.
-func formatInputChannels(channels int) string {
-	switch channels {
-	case 1:
-		return "mono"
-	case 2:
-		return "stereo"
-	default:
-		return fmt.Sprintf("%dch", channels)
-	}
-}
-
 // Error returns any error that occurred during encoding
 func (m *EncodeModel) Error() error {
 	return m.err

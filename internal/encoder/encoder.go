@@ -596,3 +596,15 @@ func (e *Encoder) GetInputInfo() (sampleRate, channels int, format string) {
 	codecName := e.decCtx.Codec().Name()
 	return e.decCtx.SampleRate(), e.decCtx.ChLayout().NbChannels(), codecName.String()
 }
+
+// FormatChannelMode formats channel count as "mono", "stereo", etc.
+func FormatChannelMode(channels int) string {
+	switch channels {
+	case 1:
+		return "mono"
+	case 2:
+		return "stereo"
+	default:
+		return fmt.Sprintf("%dch", channels)
+	}
+}
