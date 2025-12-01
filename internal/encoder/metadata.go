@@ -56,10 +56,19 @@ func ParseEpisodeMetadata(markdownPath string) (*EpisodeMetadata, error) {
 
 // extractFrontmatter extracts YAML content between --- delimiters
 func extractFrontmatter(content string) (string, error) {
-	// Find the frontmatter section
 	lines := strings.Split(content, "\n")
 
-	var start, end int
+	start, end, err := findFrontmatterBounds(lines)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Join(lines[start:end], "\n"), nil
+}
+
+// findFrontmatterBounds locates the start and end indices of frontmatter content.
+// Returns the line index after the opening --- and the line index of the closing ---.
+func findFrontmatterBounds(lines []string) (start, end int, err error) {
 	delimiterCount := 0
 
 	for i, line := range lines {
@@ -69,16 +78,12 @@ func extractFrontmatter(content string) (string, error) {
 				start = i + 1
 			} else if delimiterCount == 2 {
 				end = i
-				break
+				return start, end, nil
 			}
 		}
 	}
 
-	if delimiterCount != 2 {
-		return "", fmt.Errorf("invalid frontmatter: expected two '---' delimiters, found %d", delimiterCount)
-	}
-
-	return strings.Join(lines[start:end], "\n"), nil
+	return 0, 0, fmt.Errorf("invalid frontmatter: expected two '---' delimiters, found %d", delimiterCount)
 }
 
 // ResolveCoverArtPath resolves the episode_image path to an absolute path
@@ -165,23 +170,9 @@ func UpdateFrontmatter(markdownPath, duration string, bytes int64) error {
 	lines := strings.Split(string(content), "\n")
 
 	// Find frontmatter boundaries
-	var start, end int
-	delimiterCount := 0
-
-	for i, line := range lines {
-		if strings.TrimSpace(line) == "---" {
-			delimiterCount++
-			if delimiterCount == 1 {
-				start = i + 1
-			} else if delimiterCount == 2 {
-				end = i
-				break
-			}
-		}
-	}
-
-	if delimiterCount != 2 {
-		return fmt.Errorf("invalid frontmatter format")
+	start, end, err := findFrontmatterBounds(lines)
+	if err != nil {
+		return fmt.Errorf("invalid frontmatter format: %w", err)
 	}
 
 	// Update the frontmatter lines
