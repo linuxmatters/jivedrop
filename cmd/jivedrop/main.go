@@ -411,6 +411,7 @@ func main() {
 		Date:          date,
 		Comment:       comment,
 		CoverArtPath:  coverArtPath,
+		Description:   "", // Will default to "{artist} Logo" in addCoverArt
 	}
 
 	if err := id3.WriteTags(outputPath, tagInfo); err != nil {

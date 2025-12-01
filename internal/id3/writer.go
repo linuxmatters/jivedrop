@@ -15,6 +15,7 @@ type TagInfo struct {
 	Date          string // Optional: Format: "YYYY-MM"
 	Comment       string // Optional: defaults to empty if not provided
 	CoverArtPath  string // Optional
+	Description   string // Optional: cover art description (defaults to "{Artist} Logo" if not provided)
 }
 
 // WriteTags writes ID3v2.4 tags to an MP3 file
@@ -64,7 +65,7 @@ func WriteTags(mp3Path string, info TagInfo) error {
 
 	// APIC: Cover art
 	if info.CoverArtPath != "" {
-		if err := addCoverArt(tag, info.CoverArtPath); err != nil {
+		if err := addCoverArt(tag, info.CoverArtPath, info.Artist, info.Description); err != nil {
 			return fmt.Errorf("failed to add cover art: %w", err)
 		}
 	}
@@ -78,11 +79,18 @@ func WriteTags(mp3Path string, info TagInfo) error {
 }
 
 // addCoverArt adds cover artwork as an APIC frame
-func addCoverArt(tag *id3v2.Tag, coverPath string) error {
+// If description is empty, defaults to "{artist} Logo"
+func addCoverArt(tag *id3v2.Tag, coverPath, artist, description string) error {
 	// Scale the cover art according to Apple Podcasts specifications
 	artwork, err := ScaleCoverArt(coverPath)
 	if err != nil {
 		return fmt.Errorf("failed to scale cover art: %w", err)
+	}
+
+	// Default description to "{artist} Logo" if not provided
+	desc := description
+	if desc == "" && artist != "" {
+		desc = fmt.Sprintf("%s Logo", artist)
 	}
 
 	// Create APIC frame
@@ -90,7 +98,7 @@ func addCoverArt(tag *id3v2.Tag, coverPath string) error {
 		Encoding:    id3v2.EncodingUTF8,
 		MimeType:    "image/png",
 		PictureType: id3v2.PTFrontCover,
-		Description: "Linux Matters Logo",
+		Description: desc,
 		Picture:     artwork,
 	}
 
