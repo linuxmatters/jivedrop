@@ -174,6 +174,23 @@ func resolveOutputPath(mode WorkflowMode, num, artist string) (string, error) {
 	return CLI.OutputPath, nil
 }
 
+// promptAndUpdateFrontmatter prompts the user and updates the frontmatter with podcast stats
+func promptAndUpdateFrontmatter(markdownPath, promptMsg, duration string, bytes int64) {
+	fmt.Print(promptMsg)
+	var response string
+	fmt.Scanln(&response)
+
+	if strings.ToLower(strings.TrimSpace(response)) == "y" {
+		if err := encoder.UpdateFrontmatter(markdownPath, duration, bytes); err != nil {
+			cli.PrintError(fmt.Sprintf("Failed to update frontmatter: %v", err))
+		} else {
+			cli.PrintSuccess("Frontmatter updated successfully")
+		}
+	} else {
+		cli.PrintInfo("Frontmatter not updated")
+	}
+}
+
 func main() {
 	ctx := kong.Parse(&CLI,
 		kong.Name("jivedrop"),
@@ -435,35 +452,11 @@ func main() {
 		needsUpdate = true
 	}
 
-	// Prompt user to update frontmatter if values differ
+	// Prompt user to update frontmatter if values differ or are missing
 	if needsUpdate {
-		fmt.Print("\nUpdate frontmatter with new values? [y/N]: ")
-		var response string
-		fmt.Scanln(&response)
-
-		if strings.ToLower(strings.TrimSpace(response)) == "y" {
-			if err := encoder.UpdateFrontmatter(CLI.EpisodeMD, stats.DurationString, stats.FileSizeBytes); err != nil {
-				cli.PrintError(fmt.Sprintf("Failed to update frontmatter: %v", err))
-			} else {
-				cli.PrintSuccess("Frontmatter updated successfully")
-			}
-		} else {
-			cli.PrintInfo("Frontmatter not updated")
-		}
+		promptAndUpdateFrontmatter(CLI.EpisodeMD, "\nUpdate frontmatter with new values? [y/N]: ", stats.DurationString, stats.FileSizeBytes)
 	} else if hugoMetadata.PodcastDuration == "" || hugoMetadata.PodcastBytes == 0 {
 		// If frontmatter is missing these fields, offer to add them
-		fmt.Print("\nAdd podcast_duration and podcast_bytes to frontmatter? [y/N]: ")
-		var response string
-		fmt.Scanln(&response)
-
-		if strings.ToLower(strings.TrimSpace(response)) == "y" {
-			if err := encoder.UpdateFrontmatter(CLI.EpisodeMD, stats.DurationString, stats.FileSizeBytes); err != nil {
-				cli.PrintError(fmt.Sprintf("Failed to update frontmatter: %v", err))
-			} else {
-				cli.PrintSuccess("Frontmatter updated successfully")
-			}
-		} else {
-			cli.PrintInfo("Frontmatter not updated")
-		}
+		promptAndUpdateFrontmatter(CLI.EpisodeMD, "\nAdd podcast_duration and podcast_bytes to frontmatter? [y/N]: ", stats.DurationString, stats.FileSizeBytes)
 	}
 }
