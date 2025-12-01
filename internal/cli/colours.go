@@ -15,9 +15,7 @@ var (
 	SecondaryColor = lipgloss.Color("#9370DB") // Medium purple - disco purple tones
 	BorderColor    = lipgloss.Color("#00BFFF") // Deep sky blue - glittery border
 
-	// Disco ball gradient colours (indigo → purple → cyan → white)
+	// Disco ball gradient colours (indigo → white)
 	GradientIndigo = lipgloss.Color("#4B0082") // Deep indigo
-	GradientPurple = lipgloss.Color("#9370DB") // Medium purple
-	GradientCyan   = lipgloss.Color("#00FFFF") // Electric cyan
 	GradientWhite  = lipgloss.Color("#E0E0E0") // Silver/white
 )
