@@ -210,8 +210,8 @@ func (m *EncodeModel) calculateTimeRemaining() time.Duration {
 	return remaining
 }
 
-// formatDuration formats a duration as "Xm Ys" or "Xs"
-func formatDuration(d time.Duration) string {
+// formatDurationHuman formats a duration as "Xm Ys" or "Xs"
+func formatDurationHuman(d time.Duration) string {
 	d = d.Round(time.Second)
 
 	if d < time.Minute {

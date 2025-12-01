@@ -30,7 +30,7 @@ func GetFileStats(mp3Path string) (*FileStats, error) {
 	}
 
 	// Format duration as HH:MM:SS
-	durationStr := formatDuration(duration)
+	durationStr := formatDurationHMS(duration)
 
 	return &FileStats{
 		DurationString: durationStr,
@@ -71,8 +71,8 @@ func getMP3Duration(mp3Path string) (int64, error) {
 	return durationSecs, nil
 }
 
-// formatDuration converts seconds to HH:MM:SS format
-func formatDuration(seconds int64) string {
+// formatDurationHMS converts seconds to HH:MM:SS format
+func formatDurationHMS(seconds int64) string {
 	d := time.Duration(seconds) * time.Second
 	hours := int(d.Hours())
 	minutes := int(d.Minutes()) % 60

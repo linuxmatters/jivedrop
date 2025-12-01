@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestFormatDuration(t *testing.T) {
+func TestFormatDurationHMS(t *testing.T) {
 	tests := []struct {
 		seconds  int64
 		expected string
@@ -20,9 +20,9 @@ func TestFormatDuration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
-			result := formatDuration(tt.seconds)
+			result := formatDurationHMS(tt.seconds)
 			if result != tt.expected {
-				t.Errorf("formatDuration(%d) = %s; want %s", tt.seconds, result, tt.expected)
+				t.Errorf("formatDurationHMS(%d) = %s; want %s", tt.seconds, result, tt.expected)
 			}
 		})
 	}

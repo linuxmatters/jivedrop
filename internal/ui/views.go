@@ -20,8 +20,8 @@ func progressView(m *EncodeModel) string {
 	b.WriteString("\n\n")
 
 	// Time and speed info
-	elapsed := formatDuration(m.lastUpdateTime.Sub(m.startTime))
-	remaining := formatDuration(m.calculateTimeRemaining())
+	elapsed := formatDurationHuman(m.lastUpdateTime.Sub(m.startTime))
+	remaining := formatDurationHuman(m.calculateTimeRemaining())
 	speed := m.calculateSpeed()
 
 	// Build a visually delightful stats line
@@ -63,7 +63,7 @@ func progressView(m *EncodeModel) string {
 
 // completeView renders the completion message
 func completeView(m *EncodeModel) string {
-	elapsed := formatDuration(m.lastUpdateTime.Sub(m.startTime))
+	elapsed := formatDurationHuman(m.lastUpdateTime.Sub(m.startTime))
 	speed := m.calculateSpeed()
 
 	msg := fmt.Sprintf("%s Encoded in %s (%.1fx realtime)",
