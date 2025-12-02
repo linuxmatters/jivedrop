@@ -38,7 +38,9 @@ func TestGetFileStats(t *testing.T) {
 		t.Skip("Test MP3 file not found - run tests to generate it via TestEncodeToMP3_Integration")
 	}
 
-	stats, err := GetFileStats(testFile)
+	// Use a known duration for testing (the test file is ~27 seconds)
+	testDurationSecs := int64(27)
+	stats, err := GetFileStats(testFile, testDurationSecs)
 	if err != nil {
 		t.Fatalf("GetFileStats() error = %v", err)
 	}
@@ -52,9 +54,9 @@ func TestGetFileStats(t *testing.T) {
 		t.Errorf("Duration format incorrect: got %s, want HH:MM:SS format", stats.DurationString)
 	}
 
-	// Verify we got positive values
-	if stats.DurationSecs <= 0 {
-		t.Errorf("DurationSecs = %d; want > 0", stats.DurationSecs)
+	// Verify duration matches what we passed in
+	if stats.DurationSecs != testDurationSecs {
+		t.Errorf("DurationSecs = %d; want %d", stats.DurationSecs, testDurationSecs)
 	}
 
 	if stats.FileSizeBytes <= 0 {

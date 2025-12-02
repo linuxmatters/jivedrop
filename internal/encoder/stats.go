@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"time"
-
-	"github.com/linuxmatters/ffmpeg-statigo"
 )
 
 // FileStats holds podcast frontmatter statistics
@@ -15,60 +13,23 @@ type FileStats struct {
 	FileSizeBytes  int64  // File size in bytes
 }
 
-// GetFileStats extracts duration and file size from an encoded MP3 file
-func GetFileStats(mp3Path string) (*FileStats, error) {
+// GetFileStats returns file statistics using a pre-calculated duration.
+// This avoids re-opening the MP3 file with FFmpeg to extract duration.
+func GetFileStats(mp3Path string, durationSecs int64) (*FileStats, error) {
 	// Get file size
 	fileInfo, err := os.Stat(mp3Path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to stat file: %w", err)
 	}
 
-	// Open the MP3 file with ffmpeg to get duration
-	duration, err := getMP3Duration(mp3Path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get duration: %w", err)
-	}
-
 	// Format duration as HH:MM:SS
-	durationStr := formatDurationHMS(duration)
+	durationStr := formatDurationHMS(durationSecs)
 
 	return &FileStats{
 		DurationString: durationStr,
-		DurationSecs:   duration,
+		DurationSecs:   durationSecs,
 		FileSizeBytes:  fileInfo.Size(),
 	}, nil
-}
-
-// getMP3Duration opens an MP3 file and extracts its duration
-func getMP3Duration(mp3Path string) (int64, error) {
-	// Suppress FFmpeg logs
-	ffmpeg.AVLogSetLevel(ffmpeg.AVLogError)
-
-	// Open input file
-	var fmtCtx *ffmpeg.AVFormatContext
-	urlPtr := ffmpeg.ToCStr(mp3Path)
-	defer urlPtr.Free()
-
-	if _, err := ffmpeg.AVFormatOpenInput(&fmtCtx, urlPtr, nil, nil); err != nil {
-		return 0, fmt.Errorf("cannot open file: %w", err)
-	}
-	defer ffmpeg.AVFormatCloseInput(&fmtCtx)
-
-	// Find stream information
-	if _, err := ffmpeg.AVFormatFindStreamInfo(fmtCtx, nil); err != nil {
-		return 0, fmt.Errorf("cannot find stream information: %w", err)
-	}
-
-	// Get duration from format context (in AV_TIME_BASE units)
-	duration := fmtCtx.Duration()
-	if duration <= 0 {
-		return 0, fmt.Errorf("invalid duration: %d", duration)
-	}
-
-	// Convert from AV_TIME_BASE to seconds
-	durationSecs := duration / ffmpeg.AVTimeBase
-
-	return durationSecs, nil
 }
 
 // formatDurationHMS converts seconds to HH:MM:SS format

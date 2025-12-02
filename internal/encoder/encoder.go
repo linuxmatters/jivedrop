@@ -597,6 +597,21 @@ func (e *Encoder) GetInputInfo() (sampleRate, channels int, format string) {
 	return e.decCtx.SampleRate(), e.decCtx.ChLayout().NbChannels(), codecName.String()
 }
 
+// GetDurationSecs returns the duration of the encoded audio in seconds.
+// This is calculated from the samples processed during encoding, avoiding
+// the need to re-open the output file. Should be called after Encode() completes.
+func (e *Encoder) GetDurationSecs() int64 {
+	if e.encCtx == nil {
+		return 0
+	}
+	sampleRate := e.encCtx.SampleRate()
+	if sampleRate <= 0 {
+		return 0
+	}
+	// nextPts tracks total samples written to the encoder
+	return e.nextPts / int64(sampleRate)
+}
+
 // FormatChannelMode formats channel count as "mono", "stereo", etc.
 func FormatChannelMode(channels int) string {
 	switch channels {

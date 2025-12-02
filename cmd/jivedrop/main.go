@@ -417,8 +417,9 @@ func main() {
 
 	cli.PrintSuccessLabel("Complete:", outputPath)
 
-	// Extract file statistics
-	stats, err := encoder.GetFileStats(outputPath)
+	// Extract file statistics using duration from encoder (avoids re-opening file)
+	durationSecs := enc.GetDurationSecs()
+	stats, err := encoder.GetFileStats(outputPath, durationSecs)
 	if err != nil {
 		cli.PrintWarning(fmt.Sprintf("Could not extract file statistics: %v", err))
 		return

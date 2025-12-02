@@ -413,3 +413,56 @@ func TestEncoder_ProgressCallback(t *testing.T) {
 		len(progressUpdates), progressUpdates[0].samplesProcessed,
 		lastUpdate.samplesProcessed, totalSamples)
 }
+
+// TestEncoder_GetDurationSecs verifies duration calculation after encoding
+func TestEncoder_GetDurationSecs(t *testing.T) {
+	inputPath := "../../testdata/LMP0.flac"
+	if _, err := os.Stat(inputPath); os.IsNotExist(err) {
+		t.Skipf("Test file not found: %s", inputPath)
+	}
+
+	tmpDir := t.TempDir()
+	outputPath := filepath.Join(tmpDir, "test.mp3")
+
+	enc, err := New(Config{
+		InputPath:  inputPath,
+		OutputPath: outputPath,
+		Stereo:     false,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create encoder: %v", err)
+	}
+	defer enc.Close()
+
+	// GetDurationSecs before Initialize should return 0
+	if dur := enc.GetDurationSecs(); dur != 0 {
+		t.Errorf("GetDurationSecs before Initialize: got %d, want 0", dur)
+	}
+
+	if err := enc.Initialize(); err != nil {
+		t.Fatalf("Failed to initialize encoder: %v", err)
+	}
+
+	// GetDurationSecs before Encode should return 0 (no samples processed yet)
+	if dur := enc.GetDurationSecs(); dur != 0 {
+		t.Errorf("GetDurationSecs before Encode: got %d, want 0", dur)
+	}
+
+	// Encode the file
+	if err := enc.Encode(nil); err != nil {
+		t.Fatalf("Encoding failed: %v", err)
+	}
+
+	// GetDurationSecs after Encode should return a positive duration
+	duration := enc.GetDurationSecs()
+	if duration <= 0 {
+		t.Errorf("GetDurationSecs after Encode: got %d, want > 0", duration)
+	}
+
+	// LMP0.flac is approximately 27 seconds - allow some tolerance
+	if duration < 25 || duration > 30 {
+		t.Logf("Warning: duration %d seconds may be unexpected for test file", duration)
+	}
+
+	t.Logf("Encoded duration: %d seconds", duration)
+}
