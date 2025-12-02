@@ -19,6 +19,12 @@ import (
 // Release builds: git tag (e.g. "v0.1.0")
 var version = "dev"
 
+// coverArtResult holds the outcome of cover art processing
+type coverArtResult struct {
+	data []byte
+	err  error
+}
+
 type WorkflowMode int
 
 const (
@@ -375,6 +381,19 @@ func main() {
 		outputMode = "stereo"
 	}
 
+	// Start cover art processing concurrently with encoding
+	// This hides cover art processing time behind the audio encoding time
+	coverArtChan := make(chan coverArtResult, 1)
+	go func() {
+		if coverArtPath == "" {
+			coverArtChan <- coverArtResult{data: nil, err: nil}
+			return
+		}
+
+		artwork, err := id3.ScaleCoverArt(coverArtPath)
+		coverArtChan <- coverArtResult{data: artwork, err: err}
+	}()
+
 	// Start encoding with Bubbletea UI
 	fmt.Println()
 	encodeModel := ui.NewEncodeModel(enc, outputMode, outputBitrate)
@@ -396,6 +415,14 @@ func main() {
 		}
 	}
 
+	// Collect cover art result from concurrent processing
+	coverResult := <-coverArtChan
+	if coverResult.err != nil {
+		cli.PrintError(fmt.Sprintf("Failed to process cover art: %v", coverResult.err))
+		cli.PrintInfo(fmt.Sprintf("MP3 file created but missing cover art: %s", outputPath))
+		os.Exit(1)
+	}
+
 	// Write ID3v2 tags
 	fmt.Println("\nEmbedding ID3v2 tags...")
 	tagInfo := id3.TagInfo{
@@ -405,8 +432,8 @@ func main() {
 		Album:         album,
 		Date:          date,
 		Comment:       comment,
-		CoverArtPath:  coverArtPath,
-		Description:   "", // Will default to "{artist} Logo" in addCoverArt
+		CoverArtData:  coverResult.data, // Use pre-processed cover art from concurrent processing
+		Description:   "",               // Will default to "{artist} Logo" in addCoverArt
 	}
 
 	if err := id3.WriteTags(outputPath, tagInfo); err != nil {

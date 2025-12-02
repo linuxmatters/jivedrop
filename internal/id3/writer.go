@@ -15,6 +15,7 @@ type TagInfo struct {
 	Date          string // Optional: Format: "YYYY-MM"
 	Comment       string // Optional: defaults to empty if not provided
 	CoverArtPath  string // Optional
+	CoverArtData  []byte // Optional: pre-processed cover art bytes (CoverArtPath ignored if provided)
 	Description   string // Optional: cover art description (defaults to "{Artist} Logo" if not provided)
 }
 
@@ -64,7 +65,12 @@ func WriteTags(mp3Path string, info TagInfo) error {
 	}
 
 	// APIC: Cover art
-	if info.CoverArtPath != "" {
+	// Use pre-processed CoverArtData if available, otherwise process from CoverArtPath
+	if len(info.CoverArtData) > 0 {
+		if err := addCoverArtData(tag, info.CoverArtData, info.Artist, info.Description); err != nil {
+			return fmt.Errorf("failed to add cover art: %w", err)
+		}
+	} else if info.CoverArtPath != "" {
 		if err := addCoverArt(tag, info.CoverArtPath, info.Artist, info.Description); err != nil {
 			return fmt.Errorf("failed to add cover art: %w", err)
 		}
@@ -87,6 +93,12 @@ func addCoverArt(tag *id3v2.Tag, coverPath, artist, description string) error {
 		return fmt.Errorf("failed to scale cover art: %w", err)
 	}
 
+	return addCoverArtData(tag, artwork, artist, description)
+}
+
+// addCoverArtData adds pre-processed cover artwork as an APIC frame
+// If description is empty, defaults to "{artist} Logo"
+func addCoverArtData(tag *id3v2.Tag, artwork []byte, artist, description string) error {
 	// Default description to "{artist} Logo" if not provided
 	desc := description
 	if desc == "" && artist != "" {
