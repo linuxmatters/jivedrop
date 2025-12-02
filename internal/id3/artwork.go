@@ -16,8 +16,8 @@ import (
 //   - Images 1400x1400 to 3000x3000: use as-is (no scaling artifacts)
 //   - Images > 3000x3000: downscale to 3000x3000
 //
-// This preserves quality by avoiding unnecessary scaling when images are
-// already within the acceptable range (1400-3000).
+// Performance optimization: Returns original PNG bytes directly when no scaling
+// is required. Only re-encodes to PNG for scaled images or non-PNG inputs.
 func ScaleCoverArt(inputPath string) ([]byte, error) {
 	// Open and decode the image
 	file, err := os.Open(inputPath)
@@ -59,6 +59,26 @@ func ScaleCoverArt(inputPath string) ([]byte, error) {
 		needsScaling = true
 	}
 
+	// If no scaling needed and format is PNG, return original file bytes
+	if !needsScaling && format == "png" {
+		cli.PrintCover(fmt.Sprintf("%dx%d %s (no scaling needed)", width, height, format))
+		
+		// Re-open and read entire original PNG file
+		file.Close()
+		file, err = os.Open(inputPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to re-open cover art: %w", err)
+		}
+		defer file.Close()
+		
+		var buf bytes.Buffer
+		if _, err := buf.ReadFrom(file); err != nil {
+			return nil, fmt.Errorf("failed to read cover art: %w", err)
+		}
+		
+		return buf.Bytes(), nil
+	}
+
 	// Scale if needed
 	var finalImg image.Image
 	if needsScaling {
@@ -71,13 +91,13 @@ func ScaleCoverArt(inputPath string) ([]byte, error) {
 
 		finalImg = dst
 	} else {
-		// Use original image unchanged
+		// Use original image unchanged (for non-PNG formats)
 		finalImg = img
 	}
 
 	// Re-encode to PNG
-	// Note: We always use PNG regardless of input format to ensure
-	// consistent quality in ID3 tags
+	// Note: We encode to PNG for all non-PNG formats and for scaled images
+	// to ensure consistent quality in ID3 tags
 	var buf bytes.Buffer
 
 	err = png.Encode(&buf, finalImg)
@@ -89,7 +109,7 @@ func ScaleCoverArt(inputPath string) ([]byte, error) {
 	if needsScaling {
 		cli.PrintCover(fmt.Sprintf("%dx%d %s scaled to %dx%d PNG", width, height, format, targetSize, targetSize))
 	} else {
-		cli.PrintCover(fmt.Sprintf("%dx%d %s (no scaling needed)", width, height, format))
+		cli.PrintCover(fmt.Sprintf("%dx%d %s re-encoded to PNG", width, height, format))
 	}
 
 	return buf.Bytes(), nil
