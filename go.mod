@@ -5,16 +5,16 @@ go 1.24.2
 require (
 	github.com/alecthomas/kong v1.13.0
 	github.com/bogem/id3v2/v2 v2.1.4
+	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/linuxmatters/ffmpeg-statigo v0.0.0-00010101000000-000000000000
-	golang.org/x/image v0.33.0
+	golang.org/x/image v0.34.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/charmbracelet/bubbles v0.21.0 // indirect
 	github.com/charmbracelet/colorprofile v0.2.3-0.20250311203215-f60798e515dc // indirect
 	github.com/charmbracelet/harmonica v0.2.0 // indirect
 	github.com/charmbracelet/x/ansi v0.10.1 // indirect
@@ -31,7 +31,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
 )
 
 replace github.com/linuxmatters/ffmpeg-statigo => ./third_party/ffmpeg-statigo
