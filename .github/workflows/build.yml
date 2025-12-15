@@ -64,7 +64,7 @@ jobs:
           ls -lh jivedrop-${{ matrix.os }}-${{ matrix.arch }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: jivedrop-${{ matrix.os }}-${{ matrix.arch }}
           path: jivedrop-${{ matrix.os }}-${{ matrix.arch }}
