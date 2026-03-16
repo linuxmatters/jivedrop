@@ -25,7 +25,7 @@
             ffmpeg
             gnugrep
             gcc
-            go
+            go_1_26
             just
             lame
             mediainfo
