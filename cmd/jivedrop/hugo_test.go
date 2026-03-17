@@ -188,7 +188,7 @@ func TestHugoWorkflowValidate(t *testing.T) {
 
 			// For valid cases we only check argument validation, not file existence.
 			// File-not-found errors are acceptable here since the files do not exist on disk.
-			if err != nil && !strings.Contains(err.Error(), "not found") {
+			if err != nil && !strings.Contains(err.Error(), "not found") && !strings.Contains(err.Error(), "not accessible") {
 				t.Errorf("HugoWorkflow.Validate() unexpected error: %v (EpisodeMD=%q)", err, tt.episodeMD)
 			}
 		})
@@ -270,7 +270,7 @@ func TestHugoWorkflowValidate_Integration(t *testing.T) {
 				t.Errorf("HugoWorkflow.Validate() expected error but got nil\n  Description: %s\n  EpisodeMD=%q",
 					tt.description, tt.episodeMD)
 			}
-			if !tt.wantErr && err != nil && !strings.Contains(err.Error(), "not found") {
+			if !tt.wantErr && err != nil && !strings.Contains(err.Error(), "not found") && !strings.Contains(err.Error(), "not accessible") {
 				t.Errorf("HugoWorkflow.Validate() unexpected error: %v\n  Description: %s\n  EpisodeMD=%q",
 					err, tt.description, tt.episodeMD)
 			}

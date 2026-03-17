@@ -219,7 +219,7 @@ func encode(mode WorkflowMode, tagInfo id3.TagInfo, coverArtPath, outputPath str
 			return
 		}
 
-		artwork, artErr := id3.ScaleCoverArt(coverArtPath, cli.PrintCover)
+		artwork, artErr := id3.ScaleCoverArt(coverArtPath, nil)
 		coverArtChan <- coverArtResult{data: artwork, err: artErr}
 	}()
 

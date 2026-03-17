@@ -28,14 +28,14 @@ func (s *StandaloneWorkflow) Validate() error {
 		return fmt.Errorf("standalone mode requires --cover flag (cover art path)")
 	}
 
-	// Validate audio file exists
-	if _, err := os.Stat(CLI.AudioFile); os.IsNotExist(err) {
-		return fmt.Errorf("audio file not found: %s", CLI.AudioFile)
+	// Validate audio file exists and is accessible
+	if _, err := os.Stat(CLI.AudioFile); err != nil {
+		return fmt.Errorf("audio file not accessible: %w", err)
 	}
 
-	// Validate cover art exists
-	if _, err := os.Stat(CLI.Cover); os.IsNotExist(err) {
-		return fmt.Errorf("cover art not found: %s", CLI.Cover)
+	// Validate cover art exists and is accessible
+	if _, err := os.Stat(CLI.Cover); err != nil {
+		return fmt.Errorf("cover art not accessible: %w", err)
 	}
 
 	return nil
