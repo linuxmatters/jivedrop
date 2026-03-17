@@ -21,11 +21,16 @@
       {
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
+            actionlint
+            cosign
             curl
             ffmpeg
             gnugrep
             gcc
             go_1_26
+            gocyclo
+            golangci-lint
+            ineffassign
             just
             lame
             mediainfo
