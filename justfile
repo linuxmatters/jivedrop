@@ -114,6 +114,14 @@ vhs: build
 test-encoder: build
     @echo n | ./jivedrop testdata/LMP67.flac testdata/67.md --output-path testdata/
 
+# Run linters
+lint:
+    @go vet ./...
+    @gocyclo -top 20 -avg -ignore '_test\.go$' .
+    @ineffassign ./...
+    @golangci-lint run
+    @actionlint
+
 # Run tests
 test:
     go test ./...
