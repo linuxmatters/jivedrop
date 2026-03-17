@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -198,18 +199,15 @@ func UpdateFrontmatter(markdownPath, duration string, bytes int64) error {
 
 	// If fields don't exist, add them before the closing delimiter
 	if !updated || !bytesUpdated {
-		newLines := make([]string, 0, len(lines)+2)
-		newLines = append(newLines, lines[:end]...)
-
+		var insertLines []string
 		if !updated {
-			newLines = append(newLines, fmt.Sprintf("podcast_duration: %s", duration))
+			insertLines = append(insertLines, fmt.Sprintf("podcast_duration: %s", duration))
 		}
 		if !bytesUpdated {
-			newLines = append(newLines, fmt.Sprintf("podcast_bytes: %d", bytes))
+			insertLines = append(insertLines, fmt.Sprintf("podcast_bytes: %d", bytes))
 		}
 
-		newLines = append(newLines, lines[end:]...)
-		lines = newLines
+		lines = slices.Insert(lines, end, insertLines...)
 	}
 
 	// Write back to file

@@ -113,13 +113,12 @@ func sanitiseForFilename(s string) string {
 	s = strings.ToLower(s)
 	// Remove any characters that aren't alphanumeric, hyphens, or underscores
 	// Keep dots for file extensions
-	result := strings.Builder{}
-	for _, r := range s {
+	return strings.Map(func(r rune) rune {
 		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' || r == '_' || r == '.' {
-			result.WriteRune(r)
+			return r
 		}
-	}
-	return result.String()
+		return -1
+	}, s)
 }
 
 // generateFilename creates the output filename based on mode and metadata
