@@ -8,6 +8,7 @@ linters:
     - gocritic
     - gosec
     - misspell
+    - modernize
     - noctx
     - revive
     - staticcheck

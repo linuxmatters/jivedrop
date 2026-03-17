@@ -20,7 +20,7 @@ func TestWriteTags(t *testing.T) {
 	if err != nil {
 		t.Skipf("Test MP3 not found at %s: %v", testMP3, err)
 	}
-	if err := os.WriteFile(mp3Path, input, 0644); err != nil {
+	if err := os.WriteFile(mp3Path, input, 0o644); err != nil { //nolint:gosec // test file path from t.TempDir
 		t.Fatalf("Failed to create test MP3: %v", err)
 	}
 
@@ -101,7 +101,7 @@ func TestWriteTags_WithDate(t *testing.T) {
 	if err != nil {
 		t.Skipf("Test MP3 not found: %v", err)
 	}
-	if err := os.WriteFile(mp3Path, input, 0644); err != nil {
+	if err := os.WriteFile(mp3Path, input, 0o644); err != nil { //nolint:gosec // test file path from t.TempDir
 		t.Fatalf("Failed to create test MP3: %v", err)
 	}
 
@@ -139,7 +139,7 @@ func TestWriteTags_WithCoverArt(t *testing.T) {
 	if err != nil {
 		t.Skipf("Test MP3 not found at %s: %v", testMP3, err)
 	}
-	if err := os.WriteFile(mp3Path, input, 0644); err != nil {
+	if err := os.WriteFile(mp3Path, input, 0o644); err != nil { //nolint:gosec // test file path from t.TempDir
 		t.Fatalf("Failed to create test MP3: %v", err)
 	}
 
@@ -222,7 +222,7 @@ func TestWriteTags_WithCoverArt_InvalidPath(t *testing.T) {
 	if err != nil {
 		t.Skipf("Test MP3 not found at %s: %v", testMP3, err)
 	}
-	if err := os.WriteFile(mp3Path, input, 0644); err != nil {
+	if err := os.WriteFile(mp3Path, input, 0o644); err != nil { //nolint:gosec // test file path from t.TempDir
 		t.Fatalf("Failed to create test MP3: %v", err)
 	}
 
@@ -251,7 +251,7 @@ func TestWriteTags_WithCoverArt_AllMetadata(t *testing.T) {
 	if err != nil {
 		t.Skipf("Test MP3 not found: %v", err)
 	}
-	if err := os.WriteFile(mp3Path, input, 0644); err != nil {
+	if err := os.WriteFile(mp3Path, input, 0o644); err != nil { //nolint:gosec // test file path from t.TempDir
 		t.Fatalf("Failed to create test MP3: %v", err)
 	}
 
@@ -361,7 +361,7 @@ func TestWriteTags_CoverArt_NoOtherMetadata(t *testing.T) {
 	if err != nil {
 		t.Skipf("Test MP3 not found: %v", err)
 	}
-	if err := os.WriteFile(mp3Path, input, 0644); err != nil {
+	if err := os.WriteFile(mp3Path, input, 0o644); err != nil { //nolint:gosec // test file path from t.TempDir
 		t.Fatalf("Failed to create test MP3: %v", err)
 	}
 

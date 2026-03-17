@@ -45,10 +45,6 @@ func TestGetFileStats(t *testing.T) {
 		t.Fatalf("GetFileStats() error = %v", err)
 	}
 
-	if stats == nil {
-		t.Fatal("GetFileStats() returned nil stats")
-	}
-
 	// Verify duration format (should be HH:MM:SS)
 	if len(stats.DurationString) != 8 {
 		t.Errorf("Duration format incorrect: got %s, want HH:MM:SS format", stats.DurationString)

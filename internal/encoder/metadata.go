@@ -74,9 +74,10 @@ func findFrontmatterBounds(lines []string) (start, end int, err error) {
 	for i, line := range lines {
 		if strings.TrimSpace(line) == "---" {
 			delimiterCount++
-			if delimiterCount == 1 {
+			switch delimiterCount {
+			case 1:
 				start = i + 1
-			} else if delimiterCount == 2 {
+			case 2:
 				end = i
 				return start, end, nil
 			}
@@ -213,7 +214,7 @@ func UpdateFrontmatter(markdownPath, duration string, bytes int64) error {
 
 	// Write back to file
 	output := strings.Join(lines, "\n")
-	if err := os.WriteFile(markdownPath, []byte(output), 0644); err != nil {
+	if err := os.WriteFile(markdownPath, []byte(output), 0o644); err != nil { //nolint:gosec // markdownPath is user-provided input path, not tainted
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 

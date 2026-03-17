@@ -98,7 +98,7 @@ No closing delimiter
 			// Create temporary test file
 			tmpDir := t.TempDir()
 			tmpFile := filepath.Join(tmpDir, "test.md")
-			if err := os.WriteFile(tmpFile, []byte(tt.content), 0644); err != nil {
+			if err := os.WriteFile(tmpFile, []byte(tt.content), 0o644); err != nil {
 				t.Fatalf("Failed to create test file: %v", err)
 			}
 
@@ -145,7 +145,7 @@ Episode content.
 
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.md")
-	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(tmpFile, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -187,7 +187,7 @@ More content.
 
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.md")
-	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(tmpFile, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -267,7 +267,7 @@ Episode content.
 
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.md")
-	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(tmpFile, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -317,7 +317,7 @@ Episode content.
 
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.md")
-	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(tmpFile, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -362,7 +362,7 @@ Episode content.
 
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.md")
-	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(tmpFile, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -439,7 +439,7 @@ Some content without proper closing
 		t.Run(tt.name, func(t *testing.T) {
 			tmpDir := t.TempDir()
 			tmpFile := filepath.Join(tmpDir, "test.md")
-			if err := os.WriteFile(tmpFile, []byte(tt.content), 0644); err != nil {
+			if err := os.WriteFile(tmpFile, []byte(tt.content), 0o644); err != nil {
 				t.Fatalf("Failed to create test file: %v", err)
 			}
 
@@ -468,7 +468,7 @@ Episode content.
 
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.md")
-	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(tmpFile, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -510,7 +510,7 @@ Episode content.
 
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.md")
-	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(tmpFile, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -547,7 +547,7 @@ episode_image: "/img/test.png"
 
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.md")
-	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(tmpFile, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -591,7 +591,7 @@ Episode content.
 
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.md")
-	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(tmpFile, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -628,12 +628,12 @@ func TestResolveCoverArtPath_RelativePath(t *testing.T) {
 
 	// Create cover art file
 	imagesDir := filepath.Join(tmpDir, "images")
-	if err := os.MkdirAll(imagesDir, 0755); err != nil {
+	if err := os.MkdirAll(imagesDir, 0o755); err != nil {
 		t.Fatalf("Failed to create images directory: %v", err)
 	}
 
 	coverPath := filepath.Join(imagesDir, "cover.png")
-	if err := os.WriteFile(coverPath, []byte("fake png"), 0644); err != nil {
+	if err := os.WriteFile(coverPath, []byte("fake png"), 0o644); err != nil {
 		t.Fatalf("Failed to create cover art file: %v", err)
 	}
 
@@ -645,7 +645,7 @@ title: "Test"
 episode_image: "./images/cover.png"
 ---
 `
-	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0o644); err != nil {
 		t.Fatalf("Failed to create markdown file: %v", err)
 	}
 
@@ -670,13 +670,13 @@ func TestResolveCoverArtPath_RelativePathSubdirectory(t *testing.T) {
 	// tmpDir/content/episodes/cover.png
 	nestedDir := filepath.Join(tmpDir, "content", "episodes")
 
-	if err := os.MkdirAll(nestedDir, 0755); err != nil {
+	if err := os.MkdirAll(nestedDir, 0o755); err != nil {
 		t.Fatalf("Failed to create nested directory: %v", err)
 	}
 
 	// Create cover art file in same directory as markdown
 	coverPath := filepath.Join(nestedDir, "cover.png")
-	if err := os.WriteFile(coverPath, []byte("fake png"), 0644); err != nil {
+	if err := os.WriteFile(coverPath, []byte("fake png"), 0o644); err != nil {
 		t.Fatalf("Failed to create cover art file: %v", err)
 	}
 
@@ -688,7 +688,7 @@ title: "Test"
 episode_image: "./cover.png"
 ---
 `
-	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0o644); err != nil {
 		t.Fatalf("Failed to create markdown file: %v", err)
 	}
 
@@ -712,19 +712,19 @@ func TestResolveCoverArtPath_AbsolutePath(t *testing.T) {
 
 	// Create Hugo static directory structure
 	staticDir := filepath.Join(tmpDir, "static", "img")
-	if err := os.MkdirAll(staticDir, 0755); err != nil {
+	if err := os.MkdirAll(staticDir, 0o755); err != nil {
 		t.Fatalf("Failed to create static directory: %v", err)
 	}
 
 	// Create cover art file
 	coverPath := filepath.Join(staticDir, "cover.png")
-	if err := os.WriteFile(coverPath, []byte("fake png"), 0644); err != nil {
+	if err := os.WriteFile(coverPath, []byte("fake png"), 0o644); err != nil {
 		t.Fatalf("Failed to create cover art file: %v", err)
 	}
 
 	// Create episode markdown file in nested content directory
 	contentDir := filepath.Join(tmpDir, "content", "episodes")
-	if err := os.MkdirAll(contentDir, 0755); err != nil {
+	if err := os.MkdirAll(contentDir, 0o755); err != nil {
 		t.Fatalf("Failed to create content directory: %v", err)
 	}
 
@@ -735,7 +735,7 @@ title: "Test"
 episode_image: "/img/cover.png"
 ---
 `
-	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0o644); err != nil {
 		t.Fatalf("Failed to create markdown file: %v", err)
 	}
 
@@ -759,17 +759,17 @@ func TestResolveCoverArtPath_AbsolutePathNested(t *testing.T) {
 	// tmpDir/static/media/podcasts/cover.png
 	// tmpDir/content/blog/post.md
 	staticDir := filepath.Join(tmpDir, "static", "media", "podcasts")
-	if err := os.MkdirAll(staticDir, 0755); err != nil {
+	if err := os.MkdirAll(staticDir, 0o755); err != nil {
 		t.Fatalf("Failed to create static directory: %v", err)
 	}
 
 	coverPath := filepath.Join(staticDir, "cover.png")
-	if err := os.WriteFile(coverPath, []byte("fake png"), 0644); err != nil {
+	if err := os.WriteFile(coverPath, []byte("fake png"), 0o644); err != nil {
 		t.Fatalf("Failed to create cover art file: %v", err)
 	}
 
 	contentDir := filepath.Join(tmpDir, "content", "blog")
-	if err := os.MkdirAll(contentDir, 0755); err != nil {
+	if err := os.MkdirAll(contentDir, 0o755); err != nil {
 		t.Fatalf("Failed to create content directory: %v", err)
 	}
 
@@ -780,7 +780,7 @@ title: "Test"
 episode_image: "/media/podcasts/cover.png"
 ---
 `
-	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0o644); err != nil {
 		t.Fatalf("Failed to create markdown file: %v", err)
 	}
 
@@ -807,7 +807,7 @@ title: "Test"
 episode_image: "./missing.png"
 ---
 `
-	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0o644); err != nil {
 		t.Fatalf("Failed to create markdown file: %v", err)
 	}
 
@@ -827,7 +827,7 @@ func TestResolveCoverArtPath_FileNotFound_Absolute(t *testing.T) {
 
 	// Create Hugo structure without the cover file
 	staticDir := filepath.Join(tmpDir, "static")
-	if err := os.MkdirAll(staticDir, 0755); err != nil {
+	if err := os.MkdirAll(staticDir, 0o755); err != nil {
 		t.Fatalf("Failed to create static directory: %v", err)
 	}
 
@@ -838,7 +838,7 @@ title: "Test"
 episode_image: "/img/missing.png"
 ---
 `
-	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0o644); err != nil {
 		t.Fatalf("Failed to create markdown file: %v", err)
 	}
 
@@ -864,7 +864,7 @@ title: "Test"
 episode_image: "/img/cover.png"
 ---
 `
-	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0644); err != nil {
+	if err := os.WriteFile(markdownPath, []byte(markdownContent), 0o644); err != nil {
 		t.Fatalf("Failed to create markdown file: %v", err)
 	}
 
