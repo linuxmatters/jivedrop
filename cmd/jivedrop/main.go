@@ -237,8 +237,6 @@ func run() int {
 		}
 	}
 
-	_ = ctx // Kong context available for future use
-
 	// Validate audio file exists
 	if _, err := os.Stat(CLI.AudioFile); os.IsNotExist(err) {
 		cli.PrintError(fmt.Sprintf("Audio file not found: %s", CLI.AudioFile))
