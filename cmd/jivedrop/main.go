@@ -391,7 +391,7 @@ func run() int {
 			return
 		}
 
-		artwork, err := id3.ScaleCoverArt(coverArtPath)
+		artwork, err := id3.ScaleCoverArt(coverArtPath, cli.PrintCover)
 		coverArtChan <- coverArtResult{data: artwork, err: err}
 	}()
 

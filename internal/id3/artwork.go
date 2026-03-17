@@ -7,7 +7,6 @@ import (
 	"image/png"
 	"os"
 
-	"github.com/linuxmatters/jivedrop/internal/cli"
 	"golang.org/x/image/draw"
 )
 
@@ -18,7 +17,7 @@ import (
 //
 // Performance optimization: Returns original PNG bytes directly when no scaling
 // is required. Only re-encodes to PNG for scaled images or non-PNG inputs.
-func ScaleCoverArt(inputPath string) ([]byte, error) {
+func ScaleCoverArt(inputPath string, logFn func(string)) ([]byte, error) {
 	// Open and decode the image
 	file, err := os.Open(inputPath)
 	if err != nil {
@@ -61,7 +60,9 @@ func ScaleCoverArt(inputPath string) ([]byte, error) {
 
 	// If no scaling needed and format is PNG, return original file bytes
 	if !needsScaling && format == "png" {
-		cli.PrintCover(fmt.Sprintf("%dx%d %s (no scaling needed)", width, height, format))
+		if logFn != nil {
+			logFn(fmt.Sprintf("%dx%d %s (no scaling needed)", width, height, format))
+		}
 
 		data, err := os.ReadFile(inputPath)
 		if err != nil {
@@ -98,10 +99,12 @@ func ScaleCoverArt(inputPath string) ([]byte, error) {
 	}
 
 	// Log scaling decision
-	if needsScaling {
-		cli.PrintCover(fmt.Sprintf("%dx%d %s scaled to %dx%d PNG", width, height, format, targetSize, targetSize))
-	} else {
-		cli.PrintCover(fmt.Sprintf("%dx%d %s re-encoded to PNG", width, height, format))
+	if logFn != nil {
+		if needsScaling {
+			logFn(fmt.Sprintf("%dx%d %s scaled to %dx%d PNG", width, height, format, targetSize, targetSize))
+		} else {
+			logFn(fmt.Sprintf("%dx%d %s re-encoded to PNG", width, height, format))
+		}
 	}
 
 	return buf.Bytes(), nil
