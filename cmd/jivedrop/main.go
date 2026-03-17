@@ -73,38 +73,6 @@ func detectMode() WorkflowMode {
 	return StandaloneMode
 }
 
-// validateHugoMode validates Hugo workflow arguments
-func validateHugoMode() error {
-	// In Hugo mode, episode markdown is required
-	if CLI.EpisodeMD == "" {
-		return fmt.Errorf("hugo mode requires episode markdown file as second argument")
-	}
-
-	if !strings.HasSuffix(strings.ToLower(CLI.EpisodeMD), ".md") {
-		return fmt.Errorf("episode markdown file must have .md extension: %s", CLI.EpisodeMD)
-	}
-
-	return nil
-}
-
-// validateStandaloneMode validates standalone workflow arguments
-func validateStandaloneMode() error {
-	// In standalone mode, --title, --num, and --cover are required
-	if CLI.Title == "" {
-		return fmt.Errorf("standalone mode requires --title flag")
-	}
-
-	if CLI.Num == "" {
-		return fmt.Errorf("standalone mode requires --num flag (episode number)")
-	}
-
-	if CLI.Cover == "" {
-		return fmt.Errorf("standalone mode requires --cover flag (cover art path)")
-	}
-
-	return nil
-}
-
 // sanitiseForFilename replaces spaces and invalid characters for safe filenames
 func sanitiseForFilename(s string) string {
 	// Replace spaces with hyphens
@@ -196,6 +164,113 @@ func promptAndUpdateFrontmatter(markdownPath, promptMsg, duration string, bytes 
 	}
 }
 
+// encode runs the full encoding pipeline: display info, create encoder, run
+// Bubbletea UI, process cover art concurrently, write ID3 tags, and extract
+// file statistics. Returns nil stats (with nil error) when stats extraction
+// fails but the MP3 was written successfully.
+func encode(mode WorkflowMode, tagInfo id3.TagInfo, coverArtPath, outputPath string) (*encoder.FileStats, error) {
+	// Display encoding info
+	cli.PrintSuccessLabel("Ready to encode:", fmt.Sprintf("%s -> MP3", CLI.AudioFile))
+	cli.PrintLabelValue("• Episode:", fmt.Sprintf("%s - %s", tagInfo.EpisodeNumber, tagInfo.Title))
+	if mode == HugoMode {
+		cli.PrintLabelValue("• Episode markdown:", CLI.EpisodeMD)
+	}
+	cli.PrintLabelValue("• Output:", outputPath)
+	if CLI.Stereo {
+		cli.PrintLabelValue("• Encoding mode:", "Stereo 192kbps")
+	} else {
+		cli.PrintLabelValue("• Encoding mode:", "Mono 112kbps")
+	}
+
+	// Create encoder
+	enc, err := encoder.New(encoder.Config{
+		InputPath:  CLI.AudioFile,
+		OutputPath: outputPath,
+		Stereo:     CLI.Stereo,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create encoder: %w", err)
+	}
+	defer enc.Close()
+
+	// Initialize encoder
+	if err := enc.Initialize(); err != nil {
+		return nil, fmt.Errorf("failed to initialize encoder: %w", err)
+	}
+
+	// Get input info
+	sampleRate, channels, format := enc.GetInputInfo()
+	channelMode := encoder.FormatChannelMode(channels)
+	cli.PrintLabelValue("• Input:", fmt.Sprintf("%s %dHz %s", format, sampleRate, channelMode))
+
+	// Determine output bitrate and mode
+	outputBitrate := 112
+	outputMode := "mono"
+	if CLI.Stereo {
+		outputBitrate = 192
+		outputMode = "stereo"
+	}
+
+	// Start cover art processing concurrently with encoding
+	coverArtChan := make(chan coverArtResult, 1)
+	go func() {
+		if coverArtPath == "" {
+			coverArtChan <- coverArtResult{data: nil, err: nil}
+			return
+		}
+
+		artwork, artErr := id3.ScaleCoverArt(coverArtPath, cli.PrintCover)
+		coverArtChan <- coverArtResult{data: artwork, err: artErr}
+	}()
+
+	// Start encoding with Bubbletea UI
+	fmt.Println()
+	encodeModel := ui.NewEncodeModel(enc, outputMode, outputBitrate)
+
+	p := tea.NewProgram(encodeModel)
+	finalModel, err := p.Run()
+	if err != nil {
+		return nil, fmt.Errorf("UI error: %w", err)
+	}
+
+	// Check for encoding errors
+	if encModel, ok := finalModel.(*ui.EncodeModel); ok {
+		if encModel.Error() != nil {
+			// Clean up partial output file
+			os.Remove(outputPath)
+			return nil, fmt.Errorf("encoding failed: %w", encModel.Error())
+		}
+	}
+
+	// Collect cover art result from concurrent processing
+	coverResult := <-coverArtChan
+	if coverResult.err != nil {
+		cli.PrintInfo(fmt.Sprintf("MP3 file created but missing cover art: %s", outputPath))
+		return nil, fmt.Errorf("failed to process cover art: %w", coverResult.err)
+	}
+
+	// Write ID3v2 tags
+	fmt.Println("\nEmbedding ID3v2 tags...")
+	tagInfo.CoverArtData = coverResult.data
+
+	if err := id3.WriteTags(outputPath, tagInfo); err != nil {
+		cli.PrintInfo(fmt.Sprintf("MP3 file created but missing metadata: %s", outputPath))
+		return nil, fmt.Errorf("failed to write ID3 tags: %w", err)
+	}
+
+	cli.PrintSuccessLabel("Complete:", outputPath)
+
+	// Extract file statistics using duration from encoder (avoids re-opening file)
+	durationSecs := enc.GetDurationSecs()
+	stats, err := encoder.GetFileStats(outputPath, durationSecs)
+	if err != nil {
+		cli.PrintWarning(fmt.Sprintf("Could not extract file statistics: %v", err))
+		return nil, nil
+	}
+
+	return stats, nil
+}
+
 func main() {
 	os.Exit(run())
 }
@@ -243,109 +318,15 @@ func run() int {
 		return 1
 	}
 
-	// Display encoding info
-	cli.PrintSuccessLabel("Ready to encode:", fmt.Sprintf("%s -> MP3", CLI.AudioFile))
-	cli.PrintLabelValue("• Episode:", fmt.Sprintf("%s - %s", tagInfo.EpisodeNumber, tagInfo.Title))
-	if mode == HugoMode {
-		cli.PrintLabelValue("• Episode markdown:", CLI.EpisodeMD)
-	}
-	cli.PrintLabelValue("• Output:", outputPath)
-	if CLI.Stereo {
-		cli.PrintLabelValue("• Encoding mode:", "Stereo 192kbps")
-	} else {
-		cli.PrintLabelValue("• Encoding mode:", "Mono 112kbps")
-	}
-
-	// Create encoder
-	enc, err := encoder.New(encoder.Config{
-		InputPath:  CLI.AudioFile,
-		OutputPath: outputPath,
-		Stereo:     CLI.Stereo,
-	})
+	// Encode audio, process cover art, write ID3 tags, and collect file statistics
+	stats, err := encode(mode, tagInfo, coverArtPath, outputPath)
 	if err != nil {
-		cli.PrintError(fmt.Sprintf("Failed to create encoder: %v", err))
-		return 1
-	}
-	defer enc.Close()
-
-	// Initialize encoder
-	if err := enc.Initialize(); err != nil {
-		cli.PrintError(fmt.Sprintf("Failed to initialize encoder: %v", err))
+		cli.PrintError(err.Error())
 		return 1
 	}
 
-	// Get input info
-	sampleRate, channels, format := enc.GetInputInfo()
-	channelMode := encoder.FormatChannelMode(channels)
-	cli.PrintLabelValue("• Input:", fmt.Sprintf("%s %dHz %s", format, sampleRate, channelMode))
-
-	// Determine output bitrate and mode
-	outputBitrate := 112
-	outputMode := "mono"
-	if CLI.Stereo {
-		outputBitrate = 192
-		outputMode = "stereo"
-	}
-
-	// Start cover art processing concurrently with encoding
-	// This hides cover art processing time behind the audio encoding time
-	coverArtChan := make(chan coverArtResult, 1)
-	go func() {
-		if coverArtPath == "" {
-			coverArtChan <- coverArtResult{data: nil, err: nil}
-			return
-		}
-
-		artwork, err := id3.ScaleCoverArt(coverArtPath, cli.PrintCover)
-		coverArtChan <- coverArtResult{data: artwork, err: err}
-	}()
-
-	// Start encoding with Bubbletea UI
-	fmt.Println()
-	encodeModel := ui.NewEncodeModel(enc, outputMode, outputBitrate)
-
-	p := tea.NewProgram(encodeModel)
-	finalModel, err := p.Run()
-	if err != nil {
-		cli.PrintError(fmt.Sprintf("UI error: %v", err))
-		return 1
-	}
-
-	// Check for encoding errors
-	if encModel, ok := finalModel.(*ui.EncodeModel); ok {
-		if encModel.Error() != nil {
-			cli.PrintError(fmt.Sprintf("Encoding failed: %v", encModel.Error()))
-			// Clean up partial output file
-			os.Remove(outputPath)
-			return 1
-		}
-	}
-
-	// Collect cover art result from concurrent processing
-	coverResult := <-coverArtChan
-	if coverResult.err != nil {
-		cli.PrintError(fmt.Sprintf("Failed to process cover art: %v", coverResult.err))
-		cli.PrintInfo(fmt.Sprintf("MP3 file created but missing cover art: %s", outputPath))
-		return 1
-	}
-
-	// Write ID3v2 tags
-	fmt.Println("\nEmbedding ID3v2 tags...")
-	tagInfo.CoverArtData = coverResult.data
-
-	if err := id3.WriteTags(outputPath, tagInfo); err != nil {
-		cli.PrintError(fmt.Sprintf("Failed to write ID3 tags: %v", err))
-		cli.PrintInfo(fmt.Sprintf("MP3 file created but missing metadata: %s", outputPath))
-		return 1
-	}
-
-	cli.PrintSuccessLabel("Complete:", outputPath)
-
-	// Extract file statistics using duration from encoder (avoids re-opening file)
-	durationSecs := enc.GetDurationSecs()
-	stats, err := encoder.GetFileStats(outputPath, durationSecs)
-	if err != nil {
-		cli.PrintWarning(fmt.Sprintf("Could not extract file statistics: %v", err))
+	// Stats may be nil when extraction failed but encoding succeeded
+	if stats == nil {
 		return 0
 	}
 

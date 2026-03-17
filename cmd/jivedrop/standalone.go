@@ -16,8 +16,16 @@ type StandaloneWorkflow struct{}
 // Validate checks standalone-specific arguments and file existence.
 func (s *StandaloneWorkflow) Validate() error {
 	// Validate required standalone flags
-	if err := validateStandaloneMode(); err != nil {
-		return err
+	if CLI.Title == "" {
+		return fmt.Errorf("standalone mode requires --title flag")
+	}
+
+	if CLI.Num == "" {
+		return fmt.Errorf("standalone mode requires --num flag (episode number)")
+	}
+
+	if CLI.Cover == "" {
+		return fmt.Errorf("standalone mode requires --cover flag (cover art path)")
 	}
 
 	// Validate audio file exists

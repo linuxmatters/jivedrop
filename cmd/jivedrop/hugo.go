@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/linuxmatters/jivedrop/internal/cli"
 	"github.com/linuxmatters/jivedrop/internal/encoder"
@@ -19,8 +20,12 @@ type HugoWorkflow struct {
 // Validate checks Hugo-specific arguments and file existence.
 func (h *HugoWorkflow) Validate() error {
 	// Validate markdown argument
-	if err := validateHugoMode(); err != nil {
-		return err
+	if CLI.EpisodeMD == "" {
+		return fmt.Errorf("hugo mode requires episode markdown file as second argument")
+	}
+
+	if !strings.HasSuffix(strings.ToLower(CLI.EpisodeMD), ".md") {
+		return fmt.Errorf("episode markdown file must have .md extension: %s", CLI.EpisodeMD)
 	}
 
 	// Validate audio file exists
