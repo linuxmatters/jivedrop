@@ -496,7 +496,8 @@ func TestResolveOutputPath_GeneratedFilenameInTempDir(t *testing.T) {
 	}
 
 	// Verify result is in the temp directory and has correct filename
-	if !strings.HasPrefix(result, tmpDir) {
+	rel, relErr := filepath.Rel(tmpDir, result)
+	if relErr != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
 		t.Errorf("resolveOutputPath() = %q; not in temp directory %q", result, tmpDir)
 	}
 
