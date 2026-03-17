@@ -1,0 +1,64 @@
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/linuxmatters/jivedrop/internal/cli"
+	"github.com/linuxmatters/jivedrop/internal/encoder"
+	"github.com/linuxmatters/jivedrop/internal/id3"
+)
+
+// StandaloneWorkflow implements the Workflow interface for standalone mode.
+// Metadata comes entirely from CLI flags.
+type StandaloneWorkflow struct{}
+
+// Validate checks standalone-specific arguments and file existence.
+func (s *StandaloneWorkflow) Validate() error {
+	// Validate required standalone flags
+	if err := validateStandaloneMode(); err != nil {
+		return err
+	}
+
+	// Validate audio file exists
+	if _, err := os.Stat(CLI.AudioFile); os.IsNotExist(err) {
+		return fmt.Errorf("audio file not found: %s", CLI.AudioFile)
+	}
+
+	// Validate cover art exists
+	if _, err := os.Stat(CLI.Cover); os.IsNotExist(err) {
+		return fmt.Errorf("cover art not found: %s", CLI.Cover)
+	}
+
+	return nil
+}
+
+// CollectMetadata builds TagInfo from CLI flags.
+func (s *StandaloneWorkflow) CollectMetadata() (id3.TagInfo, string, error) {
+	album := CLI.Album
+	if album == "" && CLI.Artist != "" {
+		album = CLI.Artist // Inherit from artist
+	}
+
+	tagInfo := id3.TagInfo{
+		EpisodeNumber: CLI.Num,
+		Title:         CLI.Title,
+		Artist:        CLI.Artist,
+		Album:         album,
+		Date:          CLI.Date,
+		Comment:       CLI.Comment,
+	}
+
+	return tagInfo, CLI.Cover, nil
+}
+
+// PostEncode displays podcast statistics. Standalone mode has no frontmatter to update.
+func (s *StandaloneWorkflow) PostEncode(stats *encoder.FileStats, outputPath string) error {
+	fmt.Println("\nPodcast statistics:")
+	cli.PrintLabelValue("•   podcast_duration:", stats.DurationString)
+	cli.PrintLabelValue("•   podcast_bytes:", fmt.Sprintf("%d", stats.FileSizeBytes))
+	return nil
+}
+
+// Ensure StandaloneWorkflow implements Workflow at compile time.
+var _ Workflow = (*StandaloneWorkflow)(nil)
