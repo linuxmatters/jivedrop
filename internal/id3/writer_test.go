@@ -32,7 +32,6 @@ func TestWriteTags(t *testing.T) {
 		Album:         "Linux Matters",
 		Date:          "2025-11",
 		Comment:       "https://linuxmatters.sh/",
-		CoverArtPath:  "", // Skip cover art for basic test
 	}
 
 	// Write tags
@@ -149,6 +148,12 @@ func TestWriteTags_WithCoverArt(t *testing.T) {
 		t.Skipf("Test cover art not found at %s", coverArtPath)
 	}
 
+	// Pre-process cover art
+	coverArtData, err := ScaleCoverArt(coverArtPath, nil)
+	if err != nil {
+		t.Fatalf("ScaleCoverArt failed: %v", err)
+	}
+
 	// Create tag info with cover art
 	info := TagInfo{
 		EpisodeNumber: "67",
@@ -157,7 +162,7 @@ func TestWriteTags_WithCoverArt(t *testing.T) {
 		Album:         "Linux Matters",
 		Date:          "2025-11",
 		Comment:       "https://linuxmatters.sh/",
-		CoverArtPath:  coverArtPath,
+		CoverArtData:  coverArtData,
 	}
 
 	// Write tags with cover art
@@ -226,15 +231,8 @@ func TestWriteTags_WithCoverArt_InvalidPath(t *testing.T) {
 		t.Fatalf("Failed to create test MP3: %v", err)
 	}
 
-	// Create tag info with non-existent cover art path
-	info := TagInfo{
-		EpisodeNumber: "67",
-		Title:         "Test Episode",
-		CoverArtPath:  "/nonexistent/path/to/cover.png",
-	}
-
-	// WriteTags should fail with missing cover art
-	err = WriteTags(mp3Path, info)
+	// Attempt to pre-process non-existent cover art
+	_, err = ScaleCoverArt("/nonexistent/path/to/cover.png", nil)
 	if err == nil {
 		t.Error("Expected error for non-existent cover art, got nil")
 	}
@@ -261,6 +259,12 @@ func TestWriteTags_WithCoverArt_AllMetadata(t *testing.T) {
 		t.Skipf("Test cover art not found")
 	}
 
+	// Pre-process cover art
+	coverArtData, err := ScaleCoverArt(coverArtPath, nil)
+	if err != nil {
+		t.Fatalf("ScaleCoverArt failed: %v", err)
+	}
+
 	// Create comprehensive tag info
 	info := TagInfo{
 		EpisodeNumber: "42",
@@ -269,7 +273,7 @@ func TestWriteTags_WithCoverArt_AllMetadata(t *testing.T) {
 		Album:         "Season 2",
 		Date:          "2025-12",
 		Comment:       "https://adventurepodcast.example.com/episode-42",
-		CoverArtPath:  coverArtPath,
+		CoverArtData:  coverArtData,
 	}
 
 	// Write all tags
@@ -371,11 +375,17 @@ func TestWriteTags_CoverArt_NoOtherMetadata(t *testing.T) {
 		t.Skipf("Test cover art not found")
 	}
 
+	// Pre-process cover art
+	coverArtData, err := ScaleCoverArt(coverArtPath, nil)
+	if err != nil {
+		t.Fatalf("ScaleCoverArt failed: %v", err)
+	}
+
 	// Minimal tag info with only required fields and cover art
 	info := TagInfo{
 		EpisodeNumber: "1",
 		Title:         "Pilot",
-		CoverArtPath:  coverArtPath,
+		CoverArtData:  coverArtData,
 	}
 
 	// Write tags
