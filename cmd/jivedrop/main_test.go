@@ -455,7 +455,7 @@ func TestResolveOutputPath_FileOverwrite(t *testing.T) {
 	existingFile := filepath.Join(tmpDir, "existing.mp3")
 
 	// Create an existing file
-	if err := os.WriteFile(existingFile, []byte("dummy"), 0644); err != nil {
+	if err := os.WriteFile(existingFile, []byte("dummy"), 0o644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -466,7 +466,6 @@ func TestResolveOutputPath_FileOverwrite(t *testing.T) {
 	// Resolve the same path again
 	CLI.OutputPath = existingFile
 	result, err := resolveOutputPath(HugoMode, "1", "")
-
 	if err != nil {
 		t.Errorf("resolveOutputPath() with existing file: got unexpected error: %v", err)
 	}
@@ -492,13 +491,12 @@ func TestResolveOutputPath_GeneratedFilenameInTempDir(t *testing.T) {
 	CLI.Artist = "Test Show"
 
 	result, err := resolveOutputPath(StandaloneMode, "42", "Test Show")
-
 	if err != nil {
 		t.Errorf("resolveOutputPath() unexpected error: %v", err)
 	}
 
 	// Verify result is in the temp directory and has correct filename
-	if !filepath.HasPrefix(result, tmpDir) {
+	if !strings.HasPrefix(result, tmpDir) {
 		t.Errorf("resolveOutputPath() = %q; not in temp directory %q", result, tmpDir)
 	}
 

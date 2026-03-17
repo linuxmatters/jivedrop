@@ -133,7 +133,6 @@ func TestEncoder_InvalidInput(t *testing.T) {
 				OutputPath: tt.outputPath,
 				Stereo:     false,
 			})
-
 			// Check for immediate config errors
 			if err != nil {
 				if !tt.wantErr {
@@ -398,10 +397,7 @@ func TestEncoder_ProgressCallback(t *testing.T) {
 	lastUpdate := progressUpdates[len(progressUpdates)-1]
 	if lastUpdate.samplesProcessed < totalSamples {
 		// Allow small tolerance (within 1% or 100 samples, whichever is larger)
-		tolerance := int64(totalSamples / 100)
-		if tolerance < 100 {
-			tolerance = 100
-		}
+		tolerance := max(totalSamples/100, 100)
 		if totalSamples-lastUpdate.samplesProcessed > tolerance {
 			t.Errorf("Final update does not reach totalSamples: %d vs %d (diff: %d)",
 				lastUpdate.samplesProcessed, totalSamples,

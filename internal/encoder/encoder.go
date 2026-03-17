@@ -107,7 +107,7 @@ func (e *Encoder) openInput() error {
 	}
 	e.streamIndex = streamIdx
 
-	stream := e.ifmtCtx.Streams().Get(uintptr(e.streamIndex))
+	stream := e.ifmtCtx.Streams().Get(uintptr(e.streamIndex)) //nolint:gosec // streamIndex is validated by AVFindBestStream
 	codecPar := stream.Codecpar()
 
 	// Find decoder

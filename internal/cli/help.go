@@ -58,11 +58,11 @@ func StyledHelpPrinter(options kong.HelpOptions) kong.HelpPrinter {
 		sb.WriteString("\n  ")
 		sb.WriteString(helpModeStyle.Render("Hugo mode:"))
 		sb.WriteString("\n    ")
-		sb.WriteString(fmt.Sprintf("%s <audio-file> <episode-md> [flags]", ctx.Model.Name))
+		fmt.Fprintf(&sb, "%s <audio-file> <episode-md> [flags]", ctx.Model.Name)
 		sb.WriteString("\n  ")
 		sb.WriteString(helpModeStyle.Render("Standalone mode:"))
 		sb.WriteString("\n    ")
-		sb.WriteString(fmt.Sprintf("%s <audio-file> --title TEXT --num NUMBER --cover PATH [flags]", ctx.Model.Name))
+		fmt.Fprintf(&sb, "%s <audio-file> --title TEXT --num NUMBER --cover PATH [flags]", ctx.Model.Name)
 		sb.WriteString("\n")
 
 		// Arguments section
@@ -127,7 +127,7 @@ func getArguments(ctx *kong.Context) []argument {
 	var args []argument
 
 	// Parse arguments from the model
-	for _, arg := range ctx.Model.Node.Positional {
+	for _, arg := range ctx.Model.Positional {
 		name := arg.Summary()
 		help := arg.Help
 		args = append(args, argument{name: name, help: help})
@@ -147,12 +147,12 @@ func getFlags(ctx *kong.Context) []flag {
 	})
 
 	// Parse flags from the model
-	for _, f := range ctx.Model.Node.Flags {
+	for _, f := range ctx.Model.Flags {
 		if f.Name == "help" {
 			continue // Already added
 		}
 
-		flagStr := ""
+		var flagStr string
 		if f.Short != 0 {
 			flagStr = fmt.Sprintf("-%c, --%s", f.Short, f.Name)
 		} else {

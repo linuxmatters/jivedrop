@@ -18,7 +18,7 @@ func progressView(m *EncodeModel) string {
 	// Progress bar using bubbles/progress with gradient
 	progress := m.calculateProgress() / 100.0 // Convert to 0.0-1.0 range
 	b.WriteString(m.progressBar.ViewAs(progress))
-	b.WriteString(fmt.Sprintf("  %s", highlightStyle.Render(fmt.Sprintf("%3.0f%%", progress*100))))
+	fmt.Fprintf(&b, "  %s", highlightStyle.Render(fmt.Sprintf("%3.0f%%", progress*100)))
 	b.WriteString("\n\n")
 
 	// Time and speed info
@@ -51,14 +51,14 @@ func progressView(m *EncodeModel) string {
 		m.outputBitrate,
 	)
 
-	b.WriteString(fmt.Sprintf("%s  %s\n",
+	fmt.Fprintf(&b, "%s  %s\n",
 		keyStyle.Render("Input:"),
 		valueStyle.Render(inputSpec),
-	))
-	b.WriteString(fmt.Sprintf("%s  %s\n",
+	)
+	fmt.Fprintf(&b, "%s  %s\n",
 		keyStyle.Render("Output:"),
 		valueStyle.Render(outputSpec),
-	))
+	)
 
 	return boxStyle.Render(b.String())
 }

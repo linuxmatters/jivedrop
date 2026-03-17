@@ -13,9 +13,9 @@ import (
 // TestScaleCoverArt_ValidSquareImage tests scaling of valid square images
 func TestScaleCoverArt_ValidSquareImage(t *testing.T) {
 	tests := []struct {
-		name       string
-		size       int
-		expectSize int
+		name        string
+		size        int
+		expectSize  int
 		shouldScale bool
 	}{
 		{
@@ -191,7 +191,7 @@ func TestScaleCoverArt_CorruptFile(t *testing.T) {
 
 	// Write corrupt PNG data
 	corruptData := []byte{0x89, 0x50, 0x4E, 0x47} // PNG magic but incomplete
-	if err := os.WriteFile(corruptPath, corruptData, 0644); err != nil {
+	if err := os.WriteFile(corruptPath, corruptData, 0o644); err != nil {
 		t.Fatalf("Failed to create corrupt file: %v", err)
 	}
 
@@ -211,7 +211,7 @@ func TestScaleCoverArt_TextFile(t *testing.T) {
 	textPath := filepath.Join(tmpDir, "notanimage.txt")
 
 	// Write text file
-	if err := os.WriteFile(textPath, []byte("This is not an image"), 0644); err != nil {
+	if err := os.WriteFile(textPath, []byte("This is not an image"), 0o644); err != nil {
 		t.Fatalf("Failed to create text file: %v", err)
 	}
 
@@ -485,12 +485,12 @@ func createTestPNG(path string, width, height int) error {
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 
 	// Fill with a gradient pattern for visual distinctiveness
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
+	for y := range height {
+		for x := range width {
 			// Create a simple gradient pattern
-			r := uint8((x * 255) / width)
-			g := uint8((y * 255) / height)
-			b := uint8(((x + y) * 255) / (width + height))
+			r := uint8((x * 255) / width)                  //nolint:gosec // test code, values bounded by image dimensions
+			g := uint8((y * 255) / height)                 //nolint:gosec // test code, values bounded by image dimensions
+			b := uint8(((x + y) * 255) / (width + height)) //nolint:gosec // test code, values bounded by image dimensions
 			img.SetRGBA(x, y, color.RGBA{R: r, G: g, B: b, A: 255})
 		}
 	}

@@ -77,7 +77,7 @@ func detectMode() WorkflowMode {
 func validateHugoMode() error {
 	// In Hugo mode, episode markdown is required
 	if CLI.EpisodeMD == "" {
-		return fmt.Errorf("Hugo mode requires episode markdown file as second argument")
+		return fmt.Errorf("hugo mode requires episode markdown file as second argument")
 	}
 
 	if !strings.HasSuffix(strings.ToLower(CLI.EpisodeMD), ".md") {
@@ -184,7 +184,7 @@ func resolveOutputPath(mode WorkflowMode, num, artist string) (string, error) {
 func promptAndUpdateFrontmatter(markdownPath, promptMsg, duration string, bytes int64) {
 	fmt.Print(promptMsg)
 	var response string
-	fmt.Scanln(&response)
+	_, _ = fmt.Scanln(&response)
 
 	if strings.ToLower(strings.TrimSpace(response)) == "y" {
 		if err := encoder.UpdateFrontmatter(markdownPath, duration, bytes); err != nil {
@@ -198,6 +198,10 @@ func promptAndUpdateFrontmatter(markdownPath, promptMsg, duration string, bytes 
 }
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	ctx := kong.Parse(&CLI,
 		kong.Name("jivedrop"),
 		kong.Description("Drop the mix, ship the show—metadata, cover art, and all."),
@@ -209,13 +213,13 @@ func main() {
 	// Handle version flag
 	if CLI.Version {
 		cli.PrintVersion(version)
-		os.Exit(0)
+		return 0
 	}
 
 	// If no audio file provided, show help
 	if CLI.AudioFile == "" {
 		_ = ctx.PrintUsage(false)
-		os.Exit(0)
+		return 0
 	}
 
 	// Detect workflow mode and validate arguments
@@ -225,12 +229,12 @@ func main() {
 	if mode == HugoMode {
 		if err := validateHugoMode(); err != nil {
 			cli.PrintError(err.Error())
-			os.Exit(1)
+			return 1
 		}
 	} else {
 		if err := validateStandaloneMode(); err != nil {
 			cli.PrintError(err.Error())
-			os.Exit(1)
+			return 1
 		}
 	}
 
@@ -240,7 +244,7 @@ func main() {
 	if _, err := os.Stat(CLI.AudioFile); os.IsNotExist(err) {
 		cli.PrintError(fmt.Sprintf("Audio file not found: %s", CLI.AudioFile))
 		cli.PrintInfo("Make sure the audio file exists.")
-		os.Exit(1)
+		return 1
 	}
 
 	// Validate episode markdown file exists (Hugo mode)
@@ -248,7 +252,7 @@ func main() {
 		if _, err := os.Stat(CLI.EpisodeMD); os.IsNotExist(err) {
 			cli.PrintError(fmt.Sprintf("Episode file not found: %s", CLI.EpisodeMD))
 			cli.PrintInfo("Make sure the episode markdown file exists.")
-			os.Exit(1)
+			return 1
 		}
 	}
 
@@ -257,7 +261,7 @@ func main() {
 		if _, err := os.Stat(CLI.Cover); os.IsNotExist(err) {
 			cli.PrintError(fmt.Sprintf("Cover art not found: %s", CLI.Cover))
 			cli.PrintInfo("Make sure the cover art file exists.")
-			os.Exit(1)
+			return 1
 		}
 	}
 
@@ -271,7 +275,7 @@ func main() {
 		hugoMetadata, err = encoder.ParseEpisodeMetadata(CLI.EpisodeMD)
 		if err != nil {
 			cli.PrintError(fmt.Sprintf("Failed to parse episode metadata: %v", err))
-			os.Exit(1)
+			return 1
 		}
 
 		// Apply Hugo defaults
@@ -311,7 +315,7 @@ func main() {
 			if err != nil {
 				cli.PrintError(fmt.Sprintf("Failed to resolve cover art: %v", err))
 				cli.PrintInfo("Use --cover flag to specify a custom cover art path.")
-				os.Exit(1)
+				return 1
 			}
 		}
 	} else {
@@ -334,7 +338,7 @@ func main() {
 	outputPath, err := resolveOutputPath(mode, episodeNum, artist)
 	if err != nil {
 		cli.PrintError(fmt.Sprintf("Failed to resolve output path: %v", err))
-		os.Exit(1)
+		return 1
 	}
 
 	// Display encoding info
@@ -358,14 +362,14 @@ func main() {
 	})
 	if err != nil {
 		cli.PrintError(fmt.Sprintf("Failed to create encoder: %v", err))
-		os.Exit(1)
+		return 1
 	}
 	defer enc.Close()
 
 	// Initialize encoder
 	if err := enc.Initialize(); err != nil {
 		cli.PrintError(fmt.Sprintf("Failed to initialize encoder: %v", err))
-		os.Exit(1)
+		return 1
 	}
 
 	// Get input info
@@ -402,7 +406,7 @@ func main() {
 	finalModel, err := p.Run()
 	if err != nil {
 		cli.PrintError(fmt.Sprintf("UI error: %v", err))
-		os.Exit(1)
+		return 1
 	}
 
 	// Check for encoding errors
@@ -411,7 +415,7 @@ func main() {
 			cli.PrintError(fmt.Sprintf("Encoding failed: %v", encModel.Error()))
 			// Clean up partial output file
 			os.Remove(outputPath)
-			os.Exit(1)
+			return 1
 		}
 	}
 
@@ -420,7 +424,7 @@ func main() {
 	if coverResult.err != nil {
 		cli.PrintError(fmt.Sprintf("Failed to process cover art: %v", coverResult.err))
 		cli.PrintInfo(fmt.Sprintf("MP3 file created but missing cover art: %s", outputPath))
-		os.Exit(1)
+		return 1
 	}
 
 	// Write ID3v2 tags
@@ -439,7 +443,7 @@ func main() {
 	if err := id3.WriteTags(outputPath, tagInfo); err != nil {
 		cli.PrintError(fmt.Sprintf("Failed to write ID3 tags: %v", err))
 		cli.PrintInfo(fmt.Sprintf("MP3 file created but missing metadata: %s", outputPath))
-		os.Exit(1)
+		return 1
 	}
 
 	cli.PrintSuccessLabel("Complete:", outputPath)
@@ -449,7 +453,7 @@ func main() {
 	stats, err := encoder.GetFileStats(outputPath, durationSecs)
 	if err != nil {
 		cli.PrintWarning(fmt.Sprintf("Could not extract file statistics: %v", err))
-		return
+		return 0
 	}
 
 	// Display podcast statistics (both modes)
@@ -459,7 +463,7 @@ func main() {
 
 	// Only handle frontmatter updates in Hugo mode
 	if mode == StandaloneMode {
-		return
+		return 0
 	}
 
 	// Hugo mode: check and update frontmatter if needed
@@ -483,4 +487,6 @@ func main() {
 		// If frontmatter is missing these fields, offer to add them
 		promptAndUpdateFrontmatter(CLI.EpisodeMD, "\nAdd podcast_duration and podcast_bytes to frontmatter? [y/N]: ", stats.DurationString, stats.FileSizeBytes)
 	}
+
+	return 0
 }
