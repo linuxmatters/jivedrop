@@ -744,7 +744,7 @@ func BenchmarkSanitiseForFilename(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		for _, s := range testStrings {
 			sanitiseForFilename(s)
 		}
@@ -756,7 +756,7 @@ func BenchmarkGenerateFilename(b *testing.B) {
 	CLI.Artist = "Linux Matters"
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		generateFilename(HugoMode, "67", "")
 		generateFilename(StandaloneMode, "42", "My Podcast")
 		generateFilename(StandaloneMode, "1", "")

@@ -63,20 +63,12 @@ func ScaleCoverArt(inputPath string) ([]byte, error) {
 	if !needsScaling && format == "png" {
 		cli.PrintCover(fmt.Sprintf("%dx%d %s (no scaling needed)", width, height, format))
 
-		// Re-open and read entire original PNG file
-		file.Close()
-		file, err = os.Open(inputPath)
+		data, err := os.ReadFile(inputPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to re-open cover art: %w", err)
-		}
-		defer file.Close()
-
-		var buf bytes.Buffer
-		if _, err := buf.ReadFrom(file); err != nil {
 			return nil, fmt.Errorf("failed to read cover art: %w", err)
 		}
 
-		return buf.Bytes(), nil
+		return data, nil
 	}
 
 	// Scale if needed
