@@ -65,9 +65,7 @@ func WriteTags(mp3Path string, info TagInfo) error {
 
 	// APIC: Cover art
 	if len(info.CoverArtData) > 0 {
-		if err := addCoverArtData(tag, info.CoverArtData, info.Artist, info.Description); err != nil {
-			return fmt.Errorf("failed to add cover art: %w", err)
-		}
+		addCoverArtData(tag, info.CoverArtData, info.Artist, info.Description)
 	}
 
 	// Save the tag
@@ -80,7 +78,7 @@ func WriteTags(mp3Path string, info TagInfo) error {
 
 // addCoverArtData adds pre-processed cover artwork as an APIC frame
 // If description is empty, defaults to "{artist} Logo"
-func addCoverArtData(tag *id3v2.Tag, artwork []byte, artist, description string) error {
+func addCoverArtData(tag *id3v2.Tag, artwork []byte, artist, description string) {
 	// Default description to "{artist} Logo" if not provided
 	desc := description
 	if desc == "" && artist != "" {
@@ -97,6 +95,4 @@ func addCoverArtData(tag *id3v2.Tag, artwork []byte, artist, description string)
 	}
 
 	tag.AddAttachedPicture(pic)
-
-	return nil
 }
