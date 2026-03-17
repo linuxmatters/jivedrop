@@ -7,14 +7,9 @@ import (
 
 // Import shared colour palette from cli package
 var (
-	primaryColor   = cli.PrimaryColor
-	accentColor    = cli.AccentColor
-	successColor   = cli.SuccessColor
-	mutedColor     = cli.MutedColor
-	highlightColor = cli.HighlightColor
-	textColor      = cli.TextColor
-	errorColor     = cli.ErrorColor
-	borderColor    = cli.BorderColor
+	primaryColor = cli.PrimaryColor
+	accentColor  = cli.AccentColor
+	mutedColor   = cli.MutedColor
 
 	// Disco ball gradient colours
 	gradientIndigo = cli.GradientIndigo
@@ -32,38 +27,17 @@ var accentStyle = lipgloss.NewStyle().
 	Bold(true).
 	Foreground(accentColor)
 
-// Success message style
-var successStyle = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(successColor)
+// Shared styles from cli package
+var (
+	successStyle   = cli.SuccessStyle
+	errorStyle     = cli.ErrorStyle
+	highlightStyle = cli.HighlightStyle
+	keyStyle       = cli.KeyStyle
+	valueStyle     = cli.ValueStyle
+	boxStyle       = cli.BoxStyle
+)
 
-// Error message style
-var errorStyle = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(errorColor)
-
-// Highlight style for important values
-var highlightStyle = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(highlightColor)
-
-// Key-value pair styles
-var keyStyle = lipgloss.NewStyle().
-	Foreground(mutedColor)
-
-var valueStyle = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(textColor)
-
-// Muted text style
+// Muted text style (no cli equivalent)
 var mutedStyle = lipgloss.NewStyle().
 	Foreground(mutedColor).
 	Italic(true)
-
-// Box style for framed content
-var boxStyle = lipgloss.NewStyle().
-	Border(lipgloss.RoundedBorder()).
-	BorderForeground(borderColor).
-	Padding(1, 2).
-	MarginTop(1).
-	MarginBottom(1)
