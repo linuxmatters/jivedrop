@@ -9,7 +9,7 @@ require (
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/linuxmatters/ffmpeg-statigo v0.0.0-00010101000000-000000000000
-	golang.org/x/image v0.37.0
+	golang.org/x/image v0.38.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
