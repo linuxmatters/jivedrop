@@ -111,7 +111,7 @@ No closing delimiter
 					t.Errorf("Expected error containing '%s', got nil", tt.errContains)
 					return
 				}
-				if tt.errContains != "" && !contains(err.Error(), tt.errContains) {
+				if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
 					t.Errorf("Expected error containing '%s', got '%v'", tt.errContains, err)
 				}
 				return
@@ -239,15 +239,15 @@ More content.
 	updatedContent := string(updated)
 
 	// Verify fields were added before closing delimiter
-	if !contains(updatedContent, "podcast_duration: 01:23:45") {
+	if !strings.Contains(updatedContent, "podcast_duration: 01:23:45") {
 		t.Error("podcast_duration field not found in updated frontmatter")
 	}
-	if !contains(updatedContent, "podcast_bytes: 5555555") {
+	if !strings.Contains(updatedContent, "podcast_bytes: 5555555") {
 		t.Error("podcast_bytes field not found in updated frontmatter")
 	}
 
 	// Verify fields are before the closing delimiter
-	lines := splitLines(updatedContent)
+	lines := strings.Split(updatedContent, "\n")
 	closingDelimiterIdx := -1
 	durationIdx := -1
 	bytesIdx := -1
@@ -256,10 +256,10 @@ More content.
 		if i > 0 && i < len(lines)-1 && line == "---" {
 			closingDelimiterIdx = i
 		}
-		if contains(line, "podcast_duration:") {
+		if strings.Contains(line, "podcast_duration:") {
 			durationIdx = i
 		}
-		if contains(line, "podcast_bytes:") {
+		if strings.Contains(line, "podcast_bytes:") {
 			bytesIdx = i
 		}
 	}
@@ -276,10 +276,10 @@ More content.
 	}
 
 	// Verify episode body is preserved
-	if !contains(updatedContent, "Episode content goes here.") {
+	if !strings.Contains(updatedContent, "Episode content goes here.") {
 		t.Error("Episode content was corrupted")
 	}
-	if !contains(updatedContent, "More content.") {
+	if !strings.Contains(updatedContent, "More content.") {
 		t.Error("Episode content was corrupted")
 	}
 }
@@ -319,18 +319,18 @@ Episode content.
 	updatedContent := string(updated)
 
 	// Verify fields were updated with new values
-	if !contains(updatedContent, "podcast_duration: 01:23:45") {
+	if !strings.Contains(updatedContent, "podcast_duration: 01:23:45") {
 		t.Error("podcast_duration not updated correctly")
 	}
-	if !contains(updatedContent, "podcast_bytes: 5555555") {
+	if !strings.Contains(updatedContent, "podcast_bytes: 5555555") {
 		t.Error("podcast_bytes not updated correctly")
 	}
 
 	// Verify old values are gone
-	if contains(updatedContent, "podcast_duration: 00:10:00") {
+	if strings.Contains(updatedContent, "podcast_duration: 00:10:00") {
 		t.Error("Old podcast_duration value still present")
 	}
-	if contains(updatedContent, "podcast_bytes: 1000000") {
+	if strings.Contains(updatedContent, "podcast_bytes: 1000000") {
 		t.Error("Old podcast_bytes value still present")
 	}
 }
@@ -369,10 +369,10 @@ Episode content.
 	updatedContent := string(updated)
 
 	// Verify both fields are now correct
-	if !contains(updatedContent, "podcast_duration: 00:15:00") {
+	if !strings.Contains(updatedContent, "podcast_duration: 00:15:00") {
 		t.Error("podcast_duration not updated")
 	}
-	if !contains(updatedContent, "podcast_bytes: 3333333") {
+	if !strings.Contains(updatedContent, "podcast_bytes: 3333333") {
 		t.Error("podcast_bytes not inserted")
 	}
 }
@@ -414,25 +414,25 @@ Episode content.
 	updatedContent := string(updated)
 
 	// Verify existing fields are preserved
-	if !contains(updatedContent, "episode: \"42\"") {
+	if !strings.Contains(updatedContent, "episode: \"42\"") {
 		t.Error("episode field not preserved")
 	}
-	if !contains(updatedContent, "title: \"Test Episode\"") {
+	if !strings.Contains(updatedContent, "title: \"Test Episode\"") {
 		t.Error("title field not preserved")
 	}
-	if !contains(updatedContent, "summary: \"A test episode\"") {
+	if !strings.Contains(updatedContent, "summary: \"A test episode\"") {
 		t.Error("summary field not preserved")
 	}
-	if !contains(updatedContent, "Date: 2025-11-09T00:00:00Z") {
+	if !strings.Contains(updatedContent, "Date: 2025-11-09T00:00:00Z") {
 		t.Error("Date field not preserved")
 	}
-	if !contains(updatedContent, "hosts:") {
+	if !strings.Contains(updatedContent, "hosts:") {
 		t.Error("hosts field not preserved")
 	}
-	if !contains(updatedContent, " - alice") {
+	if !strings.Contains(updatedContent, " - alice") {
 		t.Error("hosts list not preserved")
 	}
-	if !contains(updatedContent, " - bob") {
+	if !strings.Contains(updatedContent, " - bob") {
 		t.Error("hosts list not preserved")
 	}
 }
@@ -521,10 +521,10 @@ Episode content.
 
 	updatedContent := string(updated)
 
-	if !contains(updatedContent, "podcast_duration: 54:32:10") {
+	if !strings.Contains(updatedContent, "podcast_duration: 54:32:10") {
 		t.Error("Duration not updated correctly")
 	}
-	if !contains(updatedContent, "podcast_bytes: 104857600") {
+	if !strings.Contains(updatedContent, "podcast_bytes: 104857600") {
 		t.Error("Large file size not updated correctly")
 	}
 }
@@ -561,10 +561,10 @@ Episode content.
 
 	updatedContent := string(updated)
 
-	if !contains(updatedContent, "podcast_duration: 00:00:00") {
+	if !strings.Contains(updatedContent, "podcast_duration: 00:00:00") {
 		t.Error("Zero duration not handled correctly")
 	}
-	if !contains(updatedContent, "podcast_bytes: 0") {
+	if !strings.Contains(updatedContent, "podcast_bytes: 0") {
 		t.Error("Zero bytes not handled correctly")
 	}
 }
@@ -598,10 +598,10 @@ episode_image: "/img/test.png"
 	updatedContent := string(updated)
 
 	// Verify fields were added
-	if !contains(updatedContent, "podcast_duration: 00:10:00") {
+	if !strings.Contains(updatedContent, "podcast_duration: 00:10:00") {
 		t.Error("podcast_duration not added")
 	}
-	if !contains(updatedContent, "podcast_bytes: 1000000") {
+	if !strings.Contains(updatedContent, "podcast_bytes: 1000000") {
 		t.Error("podcast_bytes not added")
 	}
 }
@@ -642,13 +642,13 @@ Episode content.
 	updatedContent := string(updated)
 
 	// Verify fields were added and multiline content preserved
-	if !contains(updatedContent, "podcast_duration: 00:25:00") {
+	if !strings.Contains(updatedContent, "podcast_duration: 00:25:00") {
 		t.Error("podcast_duration not added")
 	}
-	if !contains(updatedContent, "This is a multiline") {
+	if !strings.Contains(updatedContent, "This is a multiline") {
 		t.Error("Multiline content was corrupted")
 	}
-	if !contains(updatedContent, "multiple lines") {
+	if !strings.Contains(updatedContent, "multiple lines") {
 		t.Error("Multiline content was corrupted")
 	}
 }
@@ -849,7 +849,7 @@ episode_image: "./missing.png"
 	if err == nil {
 		t.Error("Expected error for missing file, got nil")
 	}
-	if !contains(err.Error(), "cover art not found") {
+	if !strings.Contains(err.Error(), "cover art not found") {
 		t.Errorf("Expected 'cover art not found' error, got: %v", err)
 	}
 }
@@ -880,7 +880,7 @@ episode_image: "/img/missing.png"
 	if err == nil {
 		t.Error("Expected error for missing file, got nil")
 	}
-	if !contains(err.Error(), "cover art not found") {
+	if !strings.Contains(err.Error(), "cover art not found") {
 		t.Errorf("Expected 'cover art not found' error, got: %v", err)
 	}
 }
@@ -906,26 +906,7 @@ episode_image: "/img/cover.png"
 	if err == nil {
 		t.Error("Expected error for missing project root, got nil")
 	}
-	if !contains(err.Error(), "could not find Hugo project root") {
+	if !strings.Contains(err.Error(), "could not find Hugo project root") {
 		t.Errorf("Expected 'could not find Hugo project root' error, got: %v", err)
 	}
-}
-
-// Helper function
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && (s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || findSubstring(s, substr)))
-}
-
-func findSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
-}
-
-// splitLines splits content by newline for position analysis
-func splitLines(content string) []string {
-	return strings.Split(content, "\n")
 }

@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -164,7 +165,7 @@ func TestScaleCoverArt_NonSquareImage(t *testing.T) {
 			if tt.wantErr {
 				if err == nil {
 					t.Error("Expected error, got nil")
-				} else if !contains(err.Error(), tt.errMatch) {
+				} else if !strings.Contains(err.Error(), tt.errMatch) {
 					t.Errorf("Expected error containing '%s', got '%v'", tt.errMatch, err)
 				}
 			}
@@ -179,7 +180,7 @@ func TestScaleCoverArt_NonExistentFile(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error for non-existent file, got nil")
 	}
-	if !contains(err.Error(), "failed to open") {
+	if !strings.Contains(err.Error(), "failed to open") {
 		t.Errorf("Expected 'failed to open' in error, got: %v", err)
 	}
 }
@@ -200,7 +201,7 @@ func TestScaleCoverArt_CorruptFile(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error for corrupt file, got nil")
 	}
-	if !contains(err.Error(), "failed to decode") {
+	if !strings.Contains(err.Error(), "failed to decode") {
 		t.Errorf("Expected 'failed to decode' in error, got: %v", err)
 	}
 }
@@ -220,7 +221,7 @@ func TestScaleCoverArt_TextFile(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error for text file, got nil")
 	}
-	if !contains(err.Error(), "failed to decode") {
+	if !strings.Contains(err.Error(), "failed to decode") {
 		t.Errorf("Expected 'failed to decode' in error, got: %v", err)
 	}
 }
@@ -502,14 +503,4 @@ func createTestPNG(path string, width, height int) error {
 	defer file.Close()
 
 	return png.Encode(file, img)
-}
-
-// Helper function to check if error message contains a substring
-func contains(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }
