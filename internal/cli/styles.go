@@ -14,18 +14,6 @@ var (
 			Foreground(PrimaryColor).
 			MarginBottom(1)
 
-	// Subtitle style - muted slate gray
-	SubtitleStyle = lipgloss.NewStyle().
-			Foreground(MutedColor).
-			Italic(true)
-
-	// Section header style
-	HeaderStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(SecondaryColor).
-			MarginTop(1).
-			MarginBottom(1)
-
 	// Success message style
 	SuccessStyle = lipgloss.NewStyle().
 			Bold(true).
