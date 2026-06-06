@@ -21,7 +21,7 @@ type Workflow interface {
 
 	// PostEncode handles post-encoding operations: stats display and,
 	// in Hugo mode, frontmatter comparison and update prompting.
-	PostEncode(stats *encoder.FileStats, outputPath string) error
+	PostEncode(stats *encoder.FileStats) error
 }
 
 // printPodcastStats displays the common podcast statistics shared by every workflow.
