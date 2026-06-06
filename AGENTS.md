@@ -25,20 +25,25 @@ just clean      # Remove build artifacts and test outputs (*.mp3)
 ## Architecture
 
 ```
-cmd/jivedrop/main.go     # CLI entry, mode detection (Hugo vs Standalone), argument validation
+cmd/jivedrop/
+  main.go                # CLI entry, mode detection (Hugo vs Standalone), argument validation
+  workflow.go            # Workflow interface + CLIOptions struct passed to each workflow
+  hugo.go                # Hugo-mode workflow (frontmatter-driven)
+  standalone.go          # Standalone-mode workflow (flag-driven)
 internal/
   encoder/               # FFmpeg-based MP3 encoding via ffmpeg-statigo
     encoder.go           # Core encode pipeline: decode → filter → encode
     metadata.go          # Hugo frontmatter parsing (YAML between --- delimiters)
     stats.go             # Duration/filesize extraction from encoded MP3
   id3/                   # ID3v2.4 tag writing via bogem/id3v2
-    writer.go            # Tag frames: TIT2, TALB, TPE1, TDRC, COMM, APIC
+    writer.go            # Tag frames: TIT2, TALB, TRCK, TPE1, TDRC, COMM, APIC
     artwork.go           # Cover art scaling (1400-3000px range for Apple Podcasts)
   ui/                    # Bubbletea TUI for encoding progress
     encode.go            # Progress model with realtime speed calculation
   cli/                   # Lipgloss-styled output
     help.go              # Custom Kong help printer
-    styles.go            # Colour palette (matches Jivefire sibling project)
+    colours.go           # Colour palette (matches Jivefire sibling project)
+    styles.go            # Lipgloss styles + Print* helpers (PrintError, PrintInfo, PrintWarning, ...)
 third_party/ffmpeg-statigo/  # Git submodule: FFmpeg 8.1 static bindings
 ```
 
@@ -53,6 +58,7 @@ third_party/ffmpeg-statigo/  # Git submodule: FFmpeg 8.1 static bindings
 ### Hugo Frontmatter
 
 - Required fields in episode markdown: `episode`, `title`, `episode_image`
+- `episode` must be a non-empty, non-negative integer (validated by `encoder.ParseEpisodeNumber`); same rule applies to the standalone `--num` flag
 - After encoding, Jivedrop calculates `podcast_duration` and `podcast_bytes`
 - Prompts user to update frontmatter if values differ or are missing
 
@@ -70,7 +76,7 @@ third_party/ffmpeg-statigo/  # Git submodule: FFmpeg 8.1 static bindings
 ## Code Conventions
 
 - **British English spelling** in user-facing text and comments
-- **Lipgloss styles** in `internal/cli/styles.go` define the colour palette
+- **Lipgloss styles** in `internal/cli/styles.go` use the colour palette defined in `internal/cli/colours.go`
 - **Kong** for CLI parsing with custom help printer
 - **Bubbletea** for interactive progress UI during encoding
 - Use `cli.PrintError()` and `cli.PrintInfo()` for user-facing messages
