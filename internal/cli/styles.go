@@ -36,6 +36,11 @@ var (
 			Bold(true).
 			Foreground(ErrorColor)
 
+	// Warning message style
+	WarningStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(SecondaryColor)
+
 	// Highlight style for important values
 	HighlightStyle = lipgloss.NewStyle().
 			Bold(true).
@@ -72,7 +77,7 @@ func PrintError(message string) {
 
 // PrintWarning prints a warning message
 func PrintWarning(message string) {
-	fmt.Printf("%s %s\n", lipgloss.NewStyle().Bold(true).Foreground(SecondaryColor).Render("Warning:"), message)
+	fmt.Printf("%s %s\n", WarningStyle.Render("Warning:"), message)
 }
 
 // PrintSuccess prints a success message
