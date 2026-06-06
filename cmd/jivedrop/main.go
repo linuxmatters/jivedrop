@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/alecthomas/kong"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/linuxmatters/jivedrop/internal/cli"
 	"github.com/linuxmatters/jivedrop/internal/encoder"
 	"github.com/linuxmatters/jivedrop/internal/id3"

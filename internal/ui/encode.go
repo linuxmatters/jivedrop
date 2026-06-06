@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/charmbracelet/bubbles/progress"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/progress"
+	tea "charm.land/bubbletea/v2"
 	"github.com/linuxmatters/jivedrop/internal/encoder"
 )
 
@@ -54,7 +54,7 @@ func NewEncodeModel(enc *encoder.Encoder, outputMode string, outputBitrate int) 
 
 	// Disco ball gradient: indigo → white (cool shimmer effect)
 	p := progress.New(
-		progress.WithGradient(string(gradientIndigo), string(gradientWhite)),
+		progress.WithColors(gradientIndigo, gradientWhite),
 		progress.WithWidth(40),
 		progress.WithoutPercentage(),
 	)
@@ -84,7 +84,7 @@ func (m *EncodeModel) Init() tea.Cmd {
 // Update handles messages
 func (m *EncodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		// Allow Ctrl+C to quit
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
@@ -118,16 +118,16 @@ func (m *EncodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the UI
-func (m *EncodeModel) View() string {
+func (m *EncodeModel) View() tea.View {
 	if m.err != nil {
-		return errorView(m.err)
+		return tea.NewView(errorView(m.err))
 	}
 
 	if m.complete {
-		return completeView(m)
+		return tea.NewView(completeView(m))
 	}
 
-	return progressView(m)
+	return tea.NewView(progressView(m))
 }
 
 // startEncoding starts the encoding process in a goroutine
