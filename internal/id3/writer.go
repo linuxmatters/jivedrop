@@ -20,14 +20,12 @@ type TagInfo struct {
 
 // WriteTags writes ID3v2.4 tags to an MP3 file
 func WriteTags(mp3Path string, info TagInfo) error {
-	// Open the MP3 file with ID3v2.4
 	tag, err := id3v2.Open(mp3Path, id3v2.Options{Parse: false})
 	if err != nil {
 		return fmt.Errorf("failed to open MP3 for tagging: %w", err)
 	}
 	defer tag.Close()
 
-	// Set version to ID3v2.4
 	tag.SetVersion(4)
 
 	// TIT2: Title = "Episode: Title"
@@ -68,7 +66,6 @@ func WriteTags(mp3Path string, info TagInfo) error {
 		addCoverArtData(tag, info.CoverArtData, info.Artist, info.Description)
 	}
 
-	// Save the tag
 	if err := tag.Save(); err != nil {
 		return fmt.Errorf("failed to save ID3 tags: %w", err)
 	}
@@ -79,13 +76,11 @@ func WriteTags(mp3Path string, info TagInfo) error {
 // addCoverArtData adds pre-processed cover artwork as an APIC frame
 // If description is empty, defaults to "{artist} Logo"
 func addCoverArtData(tag *id3v2.Tag, artwork []byte, artist, description string) {
-	// Default description to "{artist} Logo" if not provided
 	desc := description
 	if desc == "" && artist != "" {
 		desc = fmt.Sprintf("%s Logo", artist)
 	}
 
-	// Create APIC frame
 	pic := id3v2.PictureFrame{
 		Encoding:    id3v2.EncodingUTF8,
 		MimeType:    "image/png",

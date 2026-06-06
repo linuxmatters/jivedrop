@@ -60,7 +60,7 @@ func New(cfg Config) (*Encoder, error) {
 
 // Initialize opens input and output files, sets up decoder and encoder
 func (e *Encoder) Initialize() error {
-	// Suppress FFmpeg logs during normal operation
+	// Keep stderr quiet: only surface FFmpeg errors, not its info/warning spam.
 	ffmpeg.AVLogSetLevel(ffmpeg.AVLogError)
 
 	if err := e.openInput(); err != nil {
@@ -72,12 +72,10 @@ func (e *Encoder) Initialize() error {
 		return fmt.Errorf("failed to open output: %w", err)
 	}
 
-	// Allocate frames and packets
 	e.decFrame = ffmpeg.AVFrameAlloc()
 	e.filteredFrame = ffmpeg.AVFrameAlloc()
 	e.encPkt = ffmpeg.AVPacketAlloc()
 
-	// Initialize audio filter graph
 	if err := e.initFilter(); err != nil {
 		return fmt.Errorf("failed to initialize filter: %w", err)
 	}
@@ -87,7 +85,6 @@ func (e *Encoder) Initialize() error {
 
 // openInput opens and analyzes the input audio file
 func (e *Encoder) openInput() error {
-	// Open input file
 	urlPtr := ffmpeg.ToCStr(e.inputPath)
 	defer urlPtr.Free()
 
@@ -95,12 +92,10 @@ func (e *Encoder) openInput() error {
 		return fmt.Errorf("cannot open input file: %w", err)
 	}
 
-	// Find stream information
 	if _, err := ffmpeg.AVFormatFindStreamInfo(e.ifmtCtx, nil); err != nil {
 		return fmt.Errorf("cannot find stream information: %w", err)
 	}
 
-	// Find best audio stream
 	streamIdx, err := ffmpeg.AVFindBestStream(e.ifmtCtx, ffmpeg.AVMediaTypeAudio, -1, -1, nil, 0)
 	if err != nil {
 		return fmt.Errorf("cannot find audio stream: %w", err)
@@ -110,29 +105,25 @@ func (e *Encoder) openInput() error {
 	stream := e.ifmtCtx.Streams().Get(uintptr(e.streamIndex)) //nolint:gosec // streamIndex is validated by AVFindBestStream
 	codecPar := stream.Codecpar()
 
-	// Find decoder
 	decoder := ffmpeg.AVCodecFindDecoder(codecPar.CodecId())
 	if decoder == nil {
 		return fmt.Errorf("decoder not found for codec %d", codecPar.CodecId())
 	}
 
-	// Allocate decoder context
 	e.decCtx = ffmpeg.AVCodecAllocContext3(decoder)
 	if e.decCtx == nil {
 		return fmt.Errorf("failed to allocate decoder context")
 	}
 
-	// Copy codec parameters to decoder context
 	if _, err := ffmpeg.AVCodecParametersToContext(e.decCtx, codecPar); err != nil {
 		return fmt.Errorf("failed to copy codec parameters: %w", err)
 	}
 
-	// Open decoder
 	if _, err := ffmpeg.AVCodecOpen2(e.decCtx, decoder, nil); err != nil {
 		return fmt.Errorf("failed to open decoder: %w", err)
 	}
 
-	// Calculate total samples for progress tracking
+	// Precompute total sample count to drive the progress callback.
 	duration := stream.Duration()
 	timeBase := stream.TimeBase()
 	if duration > 0 {
@@ -145,7 +136,6 @@ func (e *Encoder) openInput() error {
 
 // openOutput creates the output MP3 file and sets up the encoder
 func (e *Encoder) openOutput() error {
-	// Allocate output format context
 	namePtr := ffmpeg.ToCStr(e.outputPath)
 	defer namePtr.Free()
 
@@ -153,31 +143,26 @@ func (e *Encoder) openOutput() error {
 		return fmt.Errorf("failed to create output context: %w", err)
 	}
 
-	// Find MP3 encoder
 	encoder := ffmpeg.AVCodecFindEncoder(ffmpeg.AVCodecIdMp3)
 	if encoder == nil {
 		return fmt.Errorf("MP3 encoder not found")
 	}
 
-	// Create output stream
 	outStream := ffmpeg.AVFormatNewStream(e.ofmtCtx, encoder)
 	if outStream == nil {
 		return fmt.Errorf("failed to create output stream")
 	}
 
-	// Allocate encoder context
 	e.encCtx = ffmpeg.AVCodecAllocContext3(encoder)
 	if e.encCtx == nil {
 		return fmt.Errorf("failed to allocate encoder context")
 	}
 
-	// Configure encoder for podcast MP3
+	// Podcast bitrate presets: 192kbps stereo, 112kbps mono.
 	if e.stereo {
-		// Stereo mode: 192kbps
 		e.encCtx.SetBitRate(192000)
 		ffmpeg.AVChannelLayoutDefault(e.encCtx.ChLayout(), 2)
 	} else {
-		// Mono mode: 112kbps
 		e.encCtx.SetBitRate(112000)
 		ffmpeg.AVChannelLayoutDefault(e.encCtx.ChLayout(), 1)
 	}
@@ -185,13 +170,12 @@ func (e *Encoder) openOutput() error {
 	e.encCtx.SetSampleRate(44100)
 	e.encCtx.SetSampleFmt(ffmpeg.AVSampleFmtS16P) // Signed 16-bit planar
 
-	// Create time base
 	tb := &ffmpeg.AVRational{}
 	tb.SetNum(1)
 	tb.SetDen(e.encCtx.SampleRate())
 	e.encCtx.SetTimeBase(tb)
 
-	// Set LAME-specific options via AVDictionary
+	// LAME tuning passed through AVDictionary.
 	var opts *ffmpeg.AVDictionary
 
 	keyComp := ffmpeg.ToCStr("compression_level")
@@ -211,21 +195,19 @@ func (e *Encoder) openOutput() error {
 		return fmt.Errorf("failed to set cutoff: %w", err)
 	}
 
-	// Open encoder
 	if _, err := ffmpeg.AVCodecOpen2(e.encCtx, encoder, &opts); err != nil {
 		ffmpeg.AVDictFree(&opts)
 		return fmt.Errorf("failed to open encoder: %w", err)
 	}
 	ffmpeg.AVDictFree(&opts)
 
-	// Copy encoder parameters to output stream
 	if _, err := ffmpeg.AVCodecParametersFromContext(outStream.Codecpar(), e.encCtx); err != nil {
 		return fmt.Errorf("failed to copy encoder parameters: %w", err)
 	}
 
 	outStream.SetTimeBase(e.encCtx.TimeBase())
 
-	// Open output file
+	// Formats without the NOFILE flag need an explicit AVIO output handle.
 	if e.ofmtCtx.Oformat().Flags()&ffmpeg.AVFmtNofile == 0 {
 		var pb *ffmpeg.AVIOContext
 		if _, err := ffmpeg.AVIOOpen(&pb, e.ofmtCtx.Url(), ffmpeg.AVIOFlagWrite); err != nil {
@@ -234,7 +216,6 @@ func (e *Encoder) openOutput() error {
 		e.ofmtCtx.SetPb(pb)
 	}
 
-	// Write header
 	if _, err := ffmpeg.AVFormatWriteHeader(e.ofmtCtx, nil); err != nil {
 		return fmt.Errorf("failed to write header: %w", err)
 	}
@@ -249,21 +230,18 @@ func (e *Encoder) initFilter() error {
 		return fmt.Errorf("failed to allocate filter graph")
 	}
 
-	// Get abuffer and abuffersink filters
 	bufferSrc := ffmpeg.AVFilterGetByName(ffmpeg.GlobalCStr("abuffer"))
 	bufferSink := ffmpeg.AVFilterGetByName(ffmpeg.GlobalCStr("abuffersink"))
 	if bufferSrc == nil || bufferSink == nil {
 		return fmt.Errorf("abuffer or abuffersink filter not found")
 	}
 
-	// Get channel layout string
 	layoutPtr := ffmpeg.AllocCStr(64)
 	defer layoutPtr.Free()
 	if _, err := ffmpeg.AVChannelLayoutDescribe(e.decCtx.ChLayout(), layoutPtr, 64); err != nil {
 		return fmt.Errorf("failed to describe channel layout: %w", err)
 	}
 
-	// Create abuffer source args
 	pktTimebase := e.decCtx.PktTimebase()
 	args := fmt.Sprintf(
 		"time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=%s",
@@ -276,7 +254,6 @@ func (e *Encoder) initFilter() error {
 	argsC := ffmpeg.ToCStr(args)
 	defer argsC.Free()
 
-	// Create buffer source
 	if _, err := ffmpeg.AVFilterGraphCreateFilter(
 		&e.bufferSrcCtx,
 		bufferSrc,
@@ -288,7 +265,6 @@ func (e *Encoder) initFilter() error {
 		return fmt.Errorf("failed to create buffer source: %w", err)
 	}
 
-	// Create buffer sink
 	if _, err := ffmpeg.AVFilterGraphCreateFilter(
 		&e.bufferSinkCtx,
 		bufferSink,
@@ -335,7 +311,6 @@ func (e *Encoder) initFilter() error {
 		return fmt.Errorf("failed to parse filter graph: %w", err)
 	}
 
-	// Configure filter graph
 	if _, err := ffmpeg.AVFilterGraphConfig(e.filterGraph, nil); err != nil {
 		return fmt.Errorf("failed to configure filter graph: %w", err)
 	}
@@ -367,7 +342,6 @@ func (e *Encoder) Encode(progressCb ProgressCallback) error {
 			continue
 		}
 
-		// Decode audio packet
 		if _, err := ffmpeg.AVCodecSendPacket(e.decCtx, packet); err != nil {
 			ffmpeg.AVPacketUnref(packet)
 			return fmt.Errorf("send packet to decoder failed: %w", err)
@@ -375,7 +349,6 @@ func (e *Encoder) Encode(progressCb ProgressCallback) error {
 
 		ffmpeg.AVPacketUnref(packet)
 
-		// Retrieve decoded frames
 		for {
 			if _, err := ffmpeg.AVCodecReceiveFrame(e.decCtx, e.decFrame); err != nil {
 				if errors.Is(err, ffmpeg.EAgain) || errors.Is(err, ffmpeg.AVErrorEOF) {
@@ -384,18 +357,15 @@ func (e *Encoder) Encode(progressCb ProgressCallback) error {
 				return fmt.Errorf("receive frame from decoder failed: %w", err)
 			}
 
-			// Update progress
 			e.samplesRead += int64(e.decFrame.NbSamples())
 			if progressCb != nil && e.totalSamples > 0 {
 				progressCb(e.samplesRead, e.totalSamples)
 			}
 
-			// Push frame to filter graph
 			if _, err := ffmpeg.AVBuffersrcAddFrameFlags(e.bufferSrcCtx, e.decFrame, ffmpeg.AVBuffersrcFlagKeepRef); err != nil {
 				return fmt.Errorf("failed to feed filter graph: %w", err)
 			}
 
-			// Pull filtered frames and encode
 			for {
 				if _, err := ffmpeg.AVBuffersinkGetFrame(e.bufferSinkCtx, e.filteredFrame); err != nil {
 					if errors.Is(err, ffmpeg.EAgain) || errors.Is(err, ffmpeg.AVErrorEOF) {
@@ -428,12 +398,10 @@ func (e *Encoder) Encode(progressCb ProgressCallback) error {
 			return fmt.Errorf("flush decoder receive failed: %w", err)
 		}
 
-		// Push to filter
 		if _, err := ffmpeg.AVBuffersrcAddFrameFlags(e.bufferSrcCtx, e.decFrame, ffmpeg.AVBuffersrcFlagKeepRef); err != nil {
 			return fmt.Errorf("failed to feed filter graph: %w", err)
 		}
 
-		// Pull filtered frames
 		for {
 			if _, err := ffmpeg.AVBuffersinkGetFrame(e.bufferSinkCtx, e.filteredFrame); err != nil {
 				if errors.Is(err, ffmpeg.EAgain) || errors.Is(err, ffmpeg.AVErrorEOF) {
@@ -487,18 +455,15 @@ func (e *Encoder) Encode(progressCb ProgressCallback) error {
 
 // encodeFrame encodes a single audio frame to MP3
 func (e *Encoder) encodeFrame(frame *ffmpeg.AVFrame, outStream *ffmpeg.AVStream) error {
-	// Set PTS based on our running counter
+	// Stamp a monotonic PTS from the running sample counter so the filter's
+	// reframing does not leave gaps the encoder would reject.
 	frame.SetPts(e.nextPts)
-
-	// Increment PTS by number of samples in this frame
 	e.nextPts += int64(frame.NbSamples())
 
-	// Send frame to encoder
 	if _, err := ffmpeg.AVCodecSendFrame(e.encCtx, frame); err != nil {
 		return fmt.Errorf("send frame to encoder failed: %w", err)
 	}
 
-	// Retrieve encoded packets
 	for {
 		ffmpeg.AVPacketUnref(e.encPkt)
 
@@ -509,11 +474,10 @@ func (e *Encoder) encodeFrame(frame *ffmpeg.AVFrame, outStream *ffmpeg.AVStream)
 			return fmt.Errorf("receive packet from encoder failed: %w", err)
 		}
 
-		// Set stream index and rescale timestamps
+		// Rescale packet timestamps from encoder to output stream time base.
 		e.encPkt.SetStreamIndex(0)
 		ffmpeg.AVPacketRescaleTs(e.encPkt, e.encCtx.TimeBase(), outStream.TimeBase())
 
-		// Write packet to output
 		if _, err := ffmpeg.AVInterleavedWriteFrame(e.ofmtCtx, e.encPkt); err != nil {
 			return fmt.Errorf("write frame failed: %w", err)
 		}

@@ -23,25 +23,21 @@ type EpisodeMetadata struct {
 
 // ParseEpisodeMetadata extracts metadata from a Hugo markdown file
 func ParseEpisodeMetadata(markdownPath string) (*EpisodeMetadata, error) {
-	// Read the file
 	content, err := os.ReadFile(markdownPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read episode file: %w", err)
 	}
 
-	// Extract frontmatter between --- delimiters
 	frontmatter, err := extractFrontmatter(string(content))
 	if err != nil {
 		return nil, err
 	}
 
-	// Parse YAML
 	var meta EpisodeMetadata
 	if err := yaml.Unmarshal([]byte(frontmatter), &meta); err != nil {
 		return nil, fmt.Errorf("failed to parse frontmatter: %w", err)
 	}
 
-	// Validate required fields
 	if meta.Episode == "" {
 		return nil, fmt.Errorf("missing required field: episode")
 	}
@@ -91,10 +87,9 @@ func findFrontmatterBounds(lines []string) (start, end int, err error) {
 // ResolveCoverArtPath resolves the episode_image path to an absolute path
 // The episode_image in frontmatter is relative to the markdown file
 func ResolveCoverArtPath(markdownPath, episodeImage string) (string, error) {
-	// Get the directory containing the markdown file
 	markdownDir := filepath.Dir(markdownPath)
 
-	// If episodeImage starts with "./", it's relative to markdown location
+	// A "./" prefix means the image sits beside the markdown file.
 	if strings.HasPrefix(episodeImage, "./") {
 		coverPath := filepath.Join(markdownDir, episodeImage[2:])
 		coverPath, err := filepath.Abs(coverPath)
@@ -102,7 +97,6 @@ func ResolveCoverArtPath(markdownPath, episodeImage string) (string, error) {
 			return "", fmt.Errorf("failed to resolve cover art path: %w", err)
 		}
 
-		// Check if file exists
 		if _, err := os.Stat(coverPath); err != nil {
 			return "", fmt.Errorf("cover art not found: %s", coverPath)
 		}
@@ -110,21 +104,18 @@ func ResolveCoverArtPath(markdownPath, episodeImage string) (string, error) {
 		return coverPath, nil
 	}
 
-	// Otherwise, assume it's relative to website root
-	// Walk up from markdown to find project root (contains "static" directory)
+	// Otherwise the path is rooted at the Hugo site, served from static/.
 	projectRoot, err := findProjectRoot(markdownDir)
 	if err != nil {
 		return "", err
 	}
 
-	// Resolve relative to static directory
 	coverPath := filepath.Join(projectRoot, "static", strings.TrimPrefix(episodeImage, "/"))
 	coverPath, err = filepath.Abs(coverPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to resolve cover art path: %w", err)
 	}
 
-	// Check if file exists
 	if _, err := os.Stat(coverPath); err != nil {
 		return "", fmt.Errorf("cover art not found: %s", coverPath)
 	}
@@ -138,16 +129,14 @@ func findProjectRoot(startPath string) (string, error) {
 	currentPath := startPath
 
 	for {
-		// Check if static directory exists here
 		staticPath := filepath.Join(currentPath, "static")
 		if info, err := os.Stat(staticPath); err == nil && info.IsDir() {
 			return currentPath, nil
 		}
 
-		// Move up one directory
 		parentPath := filepath.Dir(currentPath)
 
-		// Check if we've reached the root
+		// filepath.Dir returns its input at the filesystem root: stop there.
 		if parentPath == currentPath {
 			return "", fmt.Errorf("could not find Hugo project root (no 'static' directory found)")
 		}
@@ -163,7 +152,6 @@ func FormatDateForID3(t time.Time) string {
 
 // UpdateFrontmatter updates podcast_duration and podcast_bytes in the markdown file
 func UpdateFrontmatter(markdownPath, duration string, bytes int64) error {
-	// Read the entire file
 	content, err := os.ReadFile(markdownPath)
 	if err != nil {
 		return fmt.Errorf("failed to read file: %w", err)
@@ -171,33 +159,30 @@ func UpdateFrontmatter(markdownPath, duration string, bytes int64) error {
 
 	lines := strings.Split(string(content), "\n")
 
-	// Find frontmatter boundaries
 	start, end, err := findFrontmatterBounds(lines)
 	if err != nil {
 		return fmt.Errorf("invalid frontmatter format: %w", err)
 	}
 
-	// Update the frontmatter lines
+	// Rewrite existing keys in place, tracking which were present.
 	updated := false
 	bytesUpdated := false
 
 	for i := start; i < end; i++ {
 		line := lines[i]
 
-		// Update podcast_duration
 		if strings.HasPrefix(strings.TrimSpace(line), "podcast_duration:") {
 			lines[i] = fmt.Sprintf("podcast_duration: %s", duration)
 			updated = true
 		}
 
-		// Update podcast_bytes
 		if strings.HasPrefix(strings.TrimSpace(line), "podcast_bytes:") {
 			lines[i] = fmt.Sprintf("podcast_bytes: %d", bytes)
 			bytesUpdated = true
 		}
 	}
 
-	// If fields don't exist, add them before the closing delimiter
+	// Insert any missing keys just before the closing delimiter.
 	if !updated || !bytesUpdated {
 		var insertLines []string
 		if !updated {
@@ -210,7 +195,6 @@ func UpdateFrontmatter(markdownPath, duration string, bytes int64) error {
 		lines = slices.Insert(lines, end, insertLines...)
 	}
 
-	// Write back to file
 	output := strings.Join(lines, "\n")
 	if err := os.WriteFile(markdownPath, []byte(output), 0o644); err != nil { //nolint:gosec // markdownPath is user-provided input path, not tainted
 		return fmt.Errorf("failed to write file: %w", err)

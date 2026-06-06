@@ -19,7 +19,6 @@ type HugoWorkflow struct {
 
 // Validate checks Hugo-specific arguments and file existence.
 func (h *HugoWorkflow) Validate() error {
-	// Validate markdown argument
 	if CLI.EpisodeMD == "" {
 		return fmt.Errorf("hugo mode requires episode markdown file as second argument")
 	}
@@ -28,17 +27,14 @@ func (h *HugoWorkflow) Validate() error {
 		return fmt.Errorf("episode markdown file must have .md extension: %s", CLI.EpisodeMD)
 	}
 
-	// Validate audio file exists and is accessible
 	if _, err := os.Stat(CLI.AudioFile); err != nil {
 		return fmt.Errorf("audio file not accessible: %w", err)
 	}
 
-	// Validate episode markdown file exists and is accessible
 	if _, err := os.Stat(CLI.EpisodeMD); err != nil {
 		return fmt.Errorf("episode file not accessible: %w", err)
 	}
 
-	// Validate custom cover art exists (if specified)
 	if CLI.Cover != "" {
 		if _, err := os.Stat(CLI.Cover); err != nil {
 			return fmt.Errorf("cover art not accessible: %w", err)
@@ -51,14 +47,13 @@ func (h *HugoWorkflow) Validate() error {
 // CollectMetadata parses Hugo frontmatter, applies defaults and flag overrides,
 // and resolves the cover art path.
 func (h *HugoWorkflow) CollectMetadata() (id3.TagInfo, string, error) {
-	// Parse episode metadata from markdown
 	metadata, err := encoder.ParseEpisodeMetadata(CLI.EpisodeMD)
 	if err != nil {
 		return id3.TagInfo{}, "", fmt.Errorf("failed to parse episode metadata: %w", err)
 	}
 	h.hugoMetadata = metadata
 
-	// Apply Hugo defaults
+	// Seed with frontmatter values and Hugo defaults; flags override below.
 	episodeNum := metadata.Episode
 	episodeTitle := metadata.Title
 	artist := HugoDefaultArtist
@@ -88,7 +83,6 @@ func (h *HugoWorkflow) CollectMetadata() (id3.TagInfo, string, error) {
 		date = CLI.Date
 	}
 
-	// Resolve cover art path
 	var coverArtPath string
 	if CLI.Cover != "" {
 		coverArtPath = CLI.Cover
@@ -113,12 +107,10 @@ func (h *HugoWorkflow) CollectMetadata() (id3.TagInfo, string, error) {
 
 // PostEncode displays podcast statistics and handles frontmatter comparison and update prompting.
 func (h *HugoWorkflow) PostEncode(stats *encoder.FileStats, outputPath string) error {
-	// Display podcast statistics
 	fmt.Println("\nPodcast statistics:")
 	cli.PrintLabelValue("•   podcast_duration:", stats.DurationString)
 	cli.PrintLabelValue("•   podcast_bytes:", fmt.Sprintf("%d", stats.FileSizeBytes))
 
-	// Check if values differ from existing frontmatter
 	needsUpdate := false
 	if h.hugoMetadata.PodcastDuration != "" && h.hugoMetadata.PodcastDuration != stats.DurationString {
 		cli.PrintWarning(fmt.Sprintf("Duration mismatch: frontmatter has %s, calculated %s",

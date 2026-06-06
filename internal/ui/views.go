@@ -11,22 +11,18 @@ import (
 func progressView(m *EncodeModel) string {
 	var b strings.Builder
 
-	// Title
 	b.WriteString(headerStyle.Render("Encoding to MP3..."))
 	b.WriteString("\n\n")
 
-	// Progress bar using bubbles/progress with gradient
-	progress := m.calculateProgress() / 100.0 // Convert to 0.0-1.0 range
+	progress := m.calculateProgress() / 100.0 // ViewAs expects a 0.0-1.0 fraction.
 	b.WriteString(m.progressBar.ViewAs(progress))
 	fmt.Fprintf(&b, "  %s", highlightStyle.Render(fmt.Sprintf("%3.0f%%", progress*100)))
 	b.WriteString("\n\n")
 
-	// Time and speed info
 	elapsed := formatDurationHuman(m.lastUpdateTime.Sub(m.startTime))
 	remaining := formatDurationHuman(m.calculateTimeRemaining())
 	speed := m.calculateSpeed()
 
-	// Build a visually delightful stats line
 	stats := fmt.Sprintf("%s %s   %s %s   %s",
 		keyStyle.Render("Elapsed:"),
 		highlightStyle.Render(elapsed),
@@ -38,7 +34,6 @@ func progressView(m *EncodeModel) string {
 	b.WriteString(stats)
 	b.WriteString("\n\n")
 
-	// Audio specs
 	inputSpec := fmt.Sprintf("%s %.1fkHz %s",
 		m.inputFormat,
 		float64(m.inputRate)/1000.0,

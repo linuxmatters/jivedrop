@@ -126,7 +126,6 @@ type flag struct {
 func getArguments(ctx *kong.Context) []argument {
 	var args []argument
 
-	// Parse arguments from the model
 	for _, arg := range ctx.Model.Positional {
 		name := arg.Summary()
 		help := arg.Help
@@ -146,10 +145,9 @@ func getFlags(ctx *kong.Context) []flag {
 		help:  "Show context-sensitive help.",
 	})
 
-	// Parse flags from the model
 	for _, f := range ctx.Model.Flags {
 		if f.Name == "help" {
-			continue // Already added
+			continue // Already added above.
 		}
 
 		var flagStr string

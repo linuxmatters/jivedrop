@@ -91,7 +91,6 @@ func (m *EncodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case ProgressUpdate:
-		// Update progress
 		m.samplesProcessed = msg.SamplesProcessed
 		m.totalSamples = msg.TotalSamples
 		m.lastUpdateTime = time.Now()
@@ -102,7 +101,6 @@ func (m *EncodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
-		// Wait for next progress update
 		return m, m.waitForProgress()
 
 	case EncodingCompleteMsg:
@@ -135,20 +133,18 @@ func (m *EncodeModel) View() string {
 // startEncoding starts the encoding process in a goroutine
 func (m *EncodeModel) startEncoding() tea.Cmd {
 	return func() tea.Msg {
-		// Run encoding with progress callback
 		err := m.encoder.Encode(func(samplesProcessed, totalSamples int64) {
-			// Send progress update through channel
 			select {
 			case m.progressChan <- ProgressUpdate{
 				SamplesProcessed: samplesProcessed,
 				TotalSamples:     totalSamples,
 			}:
 			default:
-				// Channel full, skip this update
+				// Drop updates when the buffer is full; the UI only needs the latest.
 			}
 		})
 
-		// Close channel when done
+		// Closing the channel signals completion to waitForProgress.
 		close(m.progressChan)
 
 		return EncodingCompleteMsg{Err: err}

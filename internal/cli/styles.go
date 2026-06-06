@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Styles
 var (
 	// Title style - bold blue with disco ball emoji
 	TitleStyle = lipgloss.NewStyle().

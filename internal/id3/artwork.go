@@ -15,10 +15,10 @@ import (
 //   - Images 1400x1400 to 3000x3000: use as-is (no scaling artifacts)
 //   - Images > 3000x3000: downscale to 3000x3000
 //
-// Performance optimization: Returns original PNG bytes directly when no scaling
-// is required. Only re-encodes to PNG for scaled images or non-PNG inputs.
+// To avoid needless recompression it returns the original PNG bytes untouched
+// when no scaling is required, and only re-encodes scaled images or non-PNG
+// inputs.
 func ScaleCoverArt(inputPath string, logFn func(string)) ([]byte, error) {
-	// Open and decode the image
 	file, err := os.Open(inputPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open cover art: %w", err)
@@ -30,7 +30,7 @@ func ScaleCoverArt(inputPath string, logFn func(string)) ([]byte, error) {
 		return nil, fmt.Errorf("failed to decode cover art: %w", err)
 	}
 
-	// Verify image is square
+	// Apple Podcasts requires square artwork.
 	bounds := img.Bounds()
 	width := bounds.Dx()
 	height := bounds.Dy()
@@ -39,26 +39,22 @@ func ScaleCoverArt(inputPath string, logFn func(string)) ([]byte, error) {
 		return nil, fmt.Errorf("cover art must be square (got %dx%d)", width, height)
 	}
 
-	// Determine target size based on current dimensions
 	var targetSize int
 	needsScaling := false
 
 	switch {
 	case width < 1400:
-		// Too small: upscale to 1400
 		targetSize = 1400
 		needsScaling = true
 	case width >= 1400 && width <= 3000:
-		// Perfect range: use as-is
 		targetSize = width
 		needsScaling = false
 	case width > 3000:
-		// Too large: downscale to 3000
 		targetSize = 3000
 		needsScaling = true
 	}
 
-	// If no scaling needed and format is PNG, return original file bytes
+	// Fast path: an in-spec PNG passes through with its bytes intact.
 	if !needsScaling && format == "png" {
 		if logFn != nil {
 			logFn(fmt.Sprintf("%dx%d %s (no scaling needed)", width, height, format))
@@ -72,25 +68,20 @@ func ScaleCoverArt(inputPath string, logFn func(string)) ([]byte, error) {
 		return data, nil
 	}
 
-	// Scale if needed
 	var finalImg image.Image
 	if needsScaling {
-		// Create target image
 		dst := image.NewRGBA(image.Rect(0, 0, targetSize, targetSize))
 
-		// Use bilinear interpolation for high-quality scaling
-		// Same quality scaler as Jivefire thumbnail generation
+		// Bilinear matches the scaler used by Jivefire thumbnail generation.
 		draw.BiLinear.Scale(dst, dst.Bounds(), img, img.Bounds(), draw.Over, nil)
 
 		finalImg = dst
 	} else {
-		// Use original image unchanged (for non-PNG formats)
+		// Reaches here only for an in-spec non-PNG, re-encoded below.
 		finalImg = img
 	}
 
-	// Re-encode to PNG
-	// Note: We encode to PNG for all non-PNG formats and for scaled images
-	// to ensure consistent quality in ID3 tags
+	// Normalise every re-encoded path to PNG for a consistent APIC payload.
 	var buf bytes.Buffer
 
 	err = png.Encode(&buf, finalImg)
@@ -98,7 +89,6 @@ func ScaleCoverArt(inputPath string, logFn func(string)) ([]byte, error) {
 		return nil, fmt.Errorf("failed to encode scaled image: %w", err)
 	}
 
-	// Log scaling decision
 	if logFn != nil {
 		if needsScaling {
 			logFn(fmt.Sprintf("%dx%d %s scaled to %dx%d PNG", width, height, format, targetSize, targetSize))
