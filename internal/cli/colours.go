@@ -1,6 +1,6 @@
 package cli
 
-import "github.com/charmbracelet/lipgloss"
+import "charm.land/lipgloss/v2"
 
 // Disco ball colour palette 🪩
 // Cool blues, cyans, purples and silvers - like light reflecting off a glitter ball
