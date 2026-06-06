@@ -356,7 +356,7 @@ func run() int {
 		return 0
 	}
 
-	if err := wf.PostEncode(stats, outputPath); err != nil {
+	if err := wf.PostEncode(stats); err != nil {
 		cli.PrintError(err.Error())
 		return 1
 	}

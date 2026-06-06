@@ -107,7 +107,7 @@ func (h *HugoWorkflow) CollectMetadata() (id3.TagInfo, string, error) {
 }
 
 // PostEncode displays podcast statistics and handles frontmatter comparison and update prompting.
-func (h *HugoWorkflow) PostEncode(stats *encoder.FileStats, outputPath string) error {
+func (h *HugoWorkflow) PostEncode(stats *encoder.FileStats) error {
 	printPodcastStats(stats)
 
 	needsUpdate := false

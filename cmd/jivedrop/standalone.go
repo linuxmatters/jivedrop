@@ -60,7 +60,7 @@ func (s *StandaloneWorkflow) CollectMetadata() (id3.TagInfo, string, error) {
 }
 
 // PostEncode displays podcast statistics. Standalone mode has no frontmatter to update.
-func (s *StandaloneWorkflow) PostEncode(stats *encoder.FileStats, outputPath string) error {
+func (s *StandaloneWorkflow) PostEncode(stats *encoder.FileStats) error {
 	printPodcastStats(stats)
 	return nil
 }
