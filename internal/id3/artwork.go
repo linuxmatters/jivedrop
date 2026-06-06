@@ -40,18 +40,17 @@ func ScaleCoverArt(inputPath string) ([]byte, error) {
 	}
 
 	var targetSize int
-	needsScaling := false
+	var needsScaling bool
 
 	switch {
 	case width < 1400:
 		targetSize = 1400
 		needsScaling = true
-	case width >= 1400 && width <= 3000:
-		targetSize = width
-		needsScaling = false
 	case width > 3000:
 		targetSize = 3000
 		needsScaling = true
+	default:
+		targetSize = width
 	}
 
 	// Fast path: an in-spec PNG passes through with its bytes intact.
