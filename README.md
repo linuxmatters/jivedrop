@@ -35,7 +35,7 @@ For podcasts using Hugo static site generator and the something like [Castanet](
 
 **Hugo mode automatically:**
 - Reads episode title and number from frontmatter
-- Locates cover art from `podcast_image` field
+- Locates cover art from `episode_image` field
 - Applies Linux Matters defaults (artist, album, comment)
 - Outputs frontmatter-ready values for `podcast_duration` and `podcast_bytes`
 - Prompts to update Hugo frontmatter
@@ -93,15 +93,15 @@ Arguments:
 Flags:
   -h, --help  Show context-sensitive help.
   --title     Episode title (required in standalone mode)
-  --num       Episode number (required in standalone mode)
+  --num       Episode number — must be a non-negative integer (required in standalone mode)
   --cover     Cover art path (required in standalone mode)
   --artist    Artist name (defaults to 'Linux Matters' in Hugo mode)
   --album     Album name (defaults to artist value if omitted)
   --date      Release date (YYYY-MM-DD format)
   --comment   Comment URL (defaults to 'https://linuxmatters.sh' in Hugo mode)
-  --output-path  Output file or directory path (default: STRING)
-  --stereo  Encode as stereo at 192kbps (default: mono at 112kbps) (default: BOOL)
-  --version  Show version information (default: BOOL)
+  --output-path  Output file or directory path
+  --stereo  Encode as stereo at 192kbps (default: mono at 112kbps)
+  --version  Show version information
 ```
 
 ### Output
