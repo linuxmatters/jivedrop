@@ -455,6 +455,13 @@ func (e *Encoder) encodeFrame(frame *ffmpeg.AVFrame, outStream *ffmpeg.AVStream)
 		return fmt.Errorf("send frame to encoder failed: %w", err)
 	}
 
+	return e.drainEncoder(outStream, "receive packet from encoder failed")
+}
+
+// drainEncoder reads encoded packets from the encoder and writes them to the
+// output stream until the encoder needs more input or reaches EOF. recvErrCtx
+// labels the receive-packet error so each caller keeps its existing wording.
+func (e *Encoder) drainEncoder(outStream *ffmpeg.AVStream, recvErrCtx string) error {
 	for {
 		ffmpeg.AVPacketUnref(e.encPkt)
 
@@ -462,7 +469,7 @@ func (e *Encoder) encodeFrame(frame *ffmpeg.AVFrame, outStream *ffmpeg.AVStream)
 			if errors.Is(err, ffmpeg.EAgain) || errors.Is(err, ffmpeg.AVErrorEOF) {
 				break
 			}
-			return fmt.Errorf("receive packet from encoder failed: %w", err)
+			return fmt.Errorf("%s: %w", recvErrCtx, err)
 		}
 
 		// Rescale packet timestamps from encoder to output stream time base.
@@ -483,25 +490,7 @@ func (e *Encoder) flushEncoder(outStream *ffmpeg.AVStream) error {
 		return fmt.Errorf("flush encoder failed: %w", err)
 	}
 
-	for {
-		ffmpeg.AVPacketUnref(e.encPkt)
-
-		if _, err := ffmpeg.AVCodecReceivePacket(e.encCtx, e.encPkt); err != nil {
-			if errors.Is(err, ffmpeg.EAgain) || errors.Is(err, ffmpeg.AVErrorEOF) {
-				break
-			}
-			return fmt.Errorf("flush encoder receive failed: %w", err)
-		}
-
-		e.encPkt.SetStreamIndex(0)
-		ffmpeg.AVPacketRescaleTs(e.encPkt, e.encCtx.TimeBase(), outStream.TimeBase())
-
-		if _, err := ffmpeg.AVInterleavedWriteFrame(e.ofmtCtx, e.encPkt); err != nil {
-			return fmt.Errorf("write frame failed: %w", err)
-		}
-	}
-
-	return nil
+	return e.drainEncoder(outStream, "flush encoder receive failed")
 }
 
 // Close releases all resources
