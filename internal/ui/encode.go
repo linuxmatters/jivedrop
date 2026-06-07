@@ -323,6 +323,22 @@ func formatDurationHuman(d time.Duration) string {
 	return fmt.Sprintf("%dm %ds", m, s)
 }
 
+// formatClock formats a duration as a media-player clock: "MM:SS", or
+// "H:MM:SS" once the duration reaches an hour.
+func formatClock(d time.Duration) string {
+	d = max(d.Round(time.Second), 0)
+
+	h := int(d.Hours())
+	m := int(d.Minutes()) % 60
+	s := int(d.Seconds()) % 60
+
+	if h > 0 {
+		return fmt.Sprintf("%d:%02d:%02d", h, m, s)
+	}
+
+	return fmt.Sprintf("%02d:%02d", m, s)
+}
+
 // Error returns any error that occurred during encoding
 func (m *EncodeModel) Error() error {
 	return m.err
