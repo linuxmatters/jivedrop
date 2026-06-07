@@ -183,10 +183,12 @@ func (m *EncodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case EncodingCompleteMsg:
-		if m.cancelled || errors.Is(msg.Err, encoder.ErrCancelled) {
-			// Cancelled: Encode has returned, so the deferred Close is now safe.
-			// Skip the settle and quit promptly. err stays nil; cancellation is
-			// reported via Cancelled().
+		if errors.Is(msg.Err, encoder.ErrCancelled) {
+			// Cancelled: Encode observed the cancel and unwound, so the deferred
+			// Close is now safe. Skip the settle and quit promptly. err stays nil;
+			// cancellation is reported via Cancelled(). Classify off Encode's
+			// return, not m.cancelled: a Ctrl+C landing after Encode already
+			// returned must not discard a finished encode.
 			m.cancelled = true
 			m.complete = true
 			return m, tea.Quit
@@ -196,8 +198,11 @@ func (m *EncodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = msg.Err
 			return m, tea.Quit
 		}
-		// Success: settle the spring to 100% before quitting, keeping the bar
-		// visible via the settling → progressView route.
+		// Success: Encode finished before any cancel took effect. Clear a late
+		// Ctrl+C flag so the completed MP3 is kept, then settle the spring to 100%
+		// before quitting, keeping the bar visible via the settling → progressView
+		// route.
+		m.cancelled = false
 		m.complete = true
 		m.settling = true
 		m.anim.settleStart = time.Now()
