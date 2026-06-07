@@ -3,7 +3,6 @@ package encoder
 import (
 	"fmt"
 	"os"
-	"time"
 )
 
 // FileStats holds podcast frontmatter statistics
@@ -30,10 +29,9 @@ func GetFileStats(mp3Path string, durationSecs int64) (*FileStats, error) {
 
 // formatDurationHMS converts seconds to HH:MM:SS format
 func formatDurationHMS(seconds int64) string {
-	d := time.Duration(seconds) * time.Second
-	hours := int(d.Hours())
-	minutes := int(d.Minutes()) % 60
-	secs := int(d.Seconds()) % 60
+	hours := seconds / 3600
+	minutes := (seconds / 60) % 60
+	secs := seconds % 60
 
 	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, secs)
 }
