@@ -22,11 +22,6 @@ var headerStyle = lipgloss.NewStyle().
 	Foreground(primaryColor).
 	MarginBottom(1)
 
-// Accent style for highlighted values
-var accentStyle = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(accentColor)
-
 // Spinner style for the encoding progress indicator
 var spinnerStyle = lipgloss.NewStyle().
 	Foreground(accentColor)
@@ -45,3 +40,22 @@ var (
 var mutedStyle = lipgloss.NewStyle().
 	Foreground(mutedColor).
 	Italic(true)
+
+// clockStyle renders the elapsed/remaining MM:SS values in white, matching the
+// unbolded weight of the media-player stats row.
+var clockStyle = lipgloss.NewStyle().
+	Foreground(cli.TextColor)
+
+// frameWidth fixes the lipgloss style width (content area plus the box's 2-cell
+// horizontal padding each side) shared by every framed view, so the progress,
+// complete and error boxes match in outer width. Derived from the widest
+// progress row (the 40-cell bar + "  " + "NNN%" = 46) plus 4 cells of padding.
+const frameWidth = 50
+
+// frameStyle is the shared box used by every framed view at a fixed width.
+var frameStyle = boxStyle.Width(frameWidth)
+
+// boltStyle renders the speed lightning bolt in a warm gold against the cool
+// palette, giving it an understated "energy" cue.
+var boltStyle = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("#FFD166"))

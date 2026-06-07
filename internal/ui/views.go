@@ -22,11 +22,11 @@ func progressView(m *EncodeModel) string {
 			spinnerGlyph,
 			headerStyle.Render("Preparing to encode..."),
 		)
-		return boxStyle.Render(b.String())
+		return frameStyle.Render(b.String())
 	}
 
 	fmt.Fprintf(&b, "%s %s", spinnerGlyph, headerStyle.Render("Encoding to MP3..."))
-	b.WriteString("\n\n")
+	b.WriteString("\n")
 
 	// Clamp the displayed fraction to [0,1] so an under-damped spring
 	// overshoot never renders >100%. The spring's internal state keeps
@@ -36,8 +36,8 @@ func progressView(m *EncodeModel) string {
 	fmt.Fprintf(&b, "  %s", highlightStyle.Render(fmt.Sprintf("%3.0f%%", display*100)))
 	b.WriteString("\n\n")
 
-	elapsed := formatDurationHuman(m.lastUpdateTime.Sub(m.startTime))
-	remaining := formatDurationHuman(m.calculateTimeRemaining())
+	elapsed := formatClock(m.lastUpdateTime.Sub(m.startTime))
+	remaining := formatClock(m.calculateTimeRemaining())
 	// During settle the bar is at 100% but the loop keeps ticking; use the frozen
 	// speed so the figure does not drift as wall-clock time grows.
 	speed := m.calculateSpeed()
@@ -45,16 +45,18 @@ func progressView(m *EncodeModel) string {
 		speed = m.anim.finalSpeed
 	}
 
-	stats := lipgloss.JoinHorizontal(lipgloss.Top,
-		keyStyle.Render("Elapsed:"),
-		" ",
-		highlightStyle.Render(elapsed),
+	stats := lipgloss.JoinHorizontal(lipgloss.Center,
+		clockStyle.Render(elapsed),
+		"  ",
+		miniBar(display),
+		"  ",
+		clockStyle.Render(remaining),
 		"   ",
-		mutedStyle.Render("~Remaining:"),
-		" ",
-		mutedStyle.Render(remaining),
+		mutedStyle.Render("·"),
 		"   ",
-		accentStyle.Render(fmt.Sprintf("%.1fx realtime", speed)),
+		boltStyle.Render("⚡"),
+		" ",
+		highlightStyle.Render(fmt.Sprintf("%.1f×", speed)),
 	)
 
 	b.WriteString(stats)
@@ -72,23 +74,38 @@ func progressView(m *EncodeModel) string {
 		m.outputBitrate,
 	)
 
+	// Fix the label cell to the longer label ("Output:") so both value columns
+	// start at the same offset.
+	labelStyle := keyStyle.Width(lipgloss.Width("Output:"))
+
 	specBlock := lipgloss.JoinVertical(lipgloss.Left,
 		lipgloss.JoinHorizontal(lipgloss.Top,
-			keyStyle.Render("Input:"),
+			labelStyle.Render("Input:"),
 			"  ",
 			valueStyle.Render(inputSpec),
 		),
 		lipgloss.JoinHorizontal(lipgloss.Top,
-			keyStyle.Render("Output:"),
+			labelStyle.Render("Output:"),
 			"  ",
 			valueStyle.Render(outputSpec),
 		),
 	)
 
 	b.WriteString(specBlock)
-	b.WriteString("\n")
 
-	return boxStyle.Render(b.String())
+	return frameStyle.Render(b.String())
+}
+
+// miniBar renders a short segmented progress bar for the media-player stats row.
+// It mirrors the main bar's clamped fraction but uses alignment-safe
+// single-width glyphs (▰ filled, ▱ empty) so the row never shifts.
+func miniBar(fraction float64) string {
+	const cells = 8
+	filled := int(fraction*cells + 0.5)
+	filled = max(0, min(cells, filled))
+
+	bar := strings.Repeat("▰", filled) + strings.Repeat("▱", cells-filled)
+	return mutedStyle.Render(bar)
 }
 
 // completeView renders the completion message
@@ -96,13 +113,14 @@ func completeView(m *EncodeModel) string {
 	elapsed := formatDurationHuman(m.lastUpdateTime.Sub(m.startTime))
 	speed := m.anim.finalSpeed
 
-	msg := fmt.Sprintf("%s Encoded in %s (%.1fx realtime)",
+	msg := fmt.Sprintf("%s Encoded in %s (%s %s)",
 		successStyle.Render("✓"),
 		valueStyle.Render(elapsed),
-		speed,
+		boltStyle.Render("⚡"),
+		highlightStyle.Render(fmt.Sprintf("%.1f×", speed)),
 	)
 
-	return boxStyle.Render(lipgloss.JoinVertical(lipgloss.Left, msg))
+	return frameStyle.Render(lipgloss.JoinVertical(lipgloss.Left, msg))
 }
 
 // errorView renders an error message
@@ -112,5 +130,5 @@ func errorView(err error) string {
 		err.Error(),
 	)
 
-	return boxStyle.Render(lipgloss.JoinVertical(lipgloss.Left, msg))
+	return frameStyle.Render(lipgloss.JoinVertical(lipgloss.Left, msg))
 }
