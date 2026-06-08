@@ -173,7 +173,7 @@ func printEncodePlan(req EncodeRequest, enc *encoder.Encoder) {
 
 	sampleRate, channels, format := enc.GetInputInfo()
 	channelMode := encoder.FormatChannelMode(channels)
-	cli.PrintLabelValue("• Input:", fmt.Sprintf("%s %dHz %s", format, sampleRate, channelMode))
+	cli.PrintLabelValue("• Input:", fmt.Sprintf("%s %d㎐ %s", format, sampleRate, channelMode))
 }
 
 // encodeOutcome reports how the Bubbletea encoding UI finished. err is non-nil
