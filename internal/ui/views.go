@@ -62,13 +62,13 @@ func progressView(m *EncodeModel) string {
 	b.WriteString(stats)
 	b.WriteString("\n\n")
 
-	inputSpec := fmt.Sprintf("%s %.1fkHz %s",
+	inputSpec := fmt.Sprintf("%s %.1f㎑ %s",
 		m.inputFormat,
 		float64(m.inputRate)/1000.0,
 		encoder.FormatChannelMode(m.inputChannels),
 	)
 
-	outputSpec := fmt.Sprintf("MP3 %.1fkHz %s CBR %dkbps",
+	outputSpec := fmt.Sprintf("MP3 %.1f㎑ %s CBR %dkbps",
 		44.1,
 		m.outputMode,
 		m.outputBitrate,
